@@ -22,12 +22,16 @@ export class PsdImage extends PsdLayer {
 
     declare s9: Border;
 
+    private static readonly SMART_OBJECT_TRANSFORM_TOLERANCE = 0.01;
+
     constructor(source: any, parent: PsdLayer, rootDoc: PsdLayer) {
         super(source, parent, rootDoc);
         this.textureUuid = utils.uuid();
 
         // img name
         this.imgName = this.attr.comps.img?.name || this.name
+
+        this.trimPlacedLayerTransparentPadding();
 
         // .9
         if (this.attr.comps['.9']) {
@@ -95,4 +99,109 @@ export class PsdImage extends PsdLayer {
         this.position.y = this.position.y - this.rootDoc.size.height * this.rootDoc.anchorPoint.y + this.size.height * arY;
     }
 
+    private trimPlacedLayerTransparentPadding() {
+        let canvasSource: canvas.Canvas = this.source.canvas;
+        if (!this.source.placedLayer || !canvasSource) {
+            return;
+        }
+
+        let rectWidth = this.rect.right - this.rect.left;
+        let rectHeight = this.rect.bottom - this.rect.top;
+        if (rectWidth !== canvasSource.width || rectHeight !== canvasSource.height) {
+            return;
+        }
+
+        if (!this.isAxisAlignedPlacedLayerTransform()) {
+            console.warn(`PsdImage-> smart object ${this.name} transform is not axis-aligned, skip transparent trim`);
+            return;
+        }
+
+        let bbox = this.computeVisibleAlphaBounds(canvasSource);
+        if (!bbox) {
+            console.warn(`PsdImage-> smart object ${this.name} has no visible pixels, keep original canvas`);
+            return;
+        }
+
+        if (bbox.left <= 0 && bbox.top <= 0 && bbox.right >= canvasSource.width && bbox.bottom >= canvasSource.height) {
+            return;
+        }
+
+        let croppedCanvas = canvas.createCanvas(bbox.right - bbox.left, bbox.bottom - bbox.top);
+        let ctx = croppedCanvas.getContext('2d');
+        ctx.drawImage(
+            canvasSource,
+            bbox.left,
+            bbox.top,
+            bbox.right - bbox.left,
+            bbox.bottom - bbox.top,
+            0,
+            0,
+            bbox.right - bbox.left,
+            bbox.bottom - bbox.top
+        );
+
+        this.source.canvas = croppedCanvas;
+        this.rect.left += bbox.left;
+        this.rect.top += bbox.top;
+        this.rect.right = this.rect.left + croppedCanvas.width;
+        this.rect.bottom = this.rect.top + croppedCanvas.height;
+    }
+
+    private isAxisAlignedPlacedLayerTransform() {
+        let transform = this.source.placedLayer?.transform;
+        if (!Array.isArray(transform) || transform.length < 8) {
+            return true;
+        }
+
+        let tolerance = PsdImage.SMART_OBJECT_TRANSFORM_TOLERANCE;
+        let [x1, y1, x2, y2, x3, y3, x4, y4] = transform;
+        return Math.abs(y1 - y2) <= tolerance
+            && Math.abs(x2 - x3) <= tolerance
+            && Math.abs(y3 - y4) <= tolerance
+            && Math.abs(x4 - x1) <= tolerance;
+    }
+
+    private computeVisibleAlphaBounds(canvasSource: canvas.Canvas) {
+        let ctx = canvasSource.getContext('2d');
+        let imageData = ctx.getImageData(0, 0, canvasSource.width, canvasSource.height);
+        let data = imageData.data;
+
+        let left = canvasSource.width;
+        let right = -1;
+        let top = canvasSource.height;
+        let bottom = -1;
+
+        for (let y = 0; y < canvasSource.height; y++) {
+            for (let x = 0; x < canvasSource.width; x++) {
+                let alpha = data[(y * canvasSource.width + x) * 4 + 3];
+                if (alpha === 0) {
+                    continue;
+                }
+
+                if (x < left) {
+                    left = x;
+                }
+                if (x > right) {
+                    right = x;
+                }
+                if (y < top) {
+                    top = y;
+                }
+                if (y > bottom) {
+                    bottom = y;
+                }
+            }
+        }
+
+        if (right < left || bottom < top) {
+            return null;
+        }
+
+        return {
+            left,
+            top,
+            right: right + 1,
+            bottom: bottom + 1,
+        };
+    }
 }

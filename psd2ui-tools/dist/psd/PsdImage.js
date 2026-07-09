@@ -1,8 +1,12 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PsdImage = void 0;
 const PsdLayer_1 = require("./PsdLayer");
 const Utils_1 = require("../utils/Utils");
+const canvas_1 = __importDefault(require("canvas"));
 const Texture9Utils_1 = require("../utils/Texture9Utils");
 const Size_1 = require("../values/Size");
 const FileUtils_1 = require("../utils/FileUtils");
@@ -14,6 +18,7 @@ class PsdImage extends PsdLayer_1.PsdLayer {
         this.textureUuid = Utils_1.utils.uuid();
         // img name
         this.imgName = ((_a = this.attr.comps.img) === null || _a === void 0 ? void 0 : _a.name) || this.name;
+        this.trimPlacedLayerTransparentPadding();
         // .9
         if (this.attr.comps['.9']) {
             let s9 = this.attr.comps['.9'];
@@ -71,5 +76,88 @@ class PsdImage extends PsdLayer_1.PsdLayer {
         this.position.x = this.position.x - this.rootDoc.size.width * this.rootDoc.anchorPoint.x + this.size.width * arX;
         this.position.y = this.position.y - this.rootDoc.size.height * this.rootDoc.anchorPoint.y + this.size.height * arY;
     }
+    trimPlacedLayerTransparentPadding() {
+        let canvasSource = this.source.canvas;
+        if (!this.source.placedLayer || !canvasSource) {
+            return;
+        }
+        let rectWidth = this.rect.right - this.rect.left;
+        let rectHeight = this.rect.bottom - this.rect.top;
+        if (rectWidth !== canvasSource.width || rectHeight !== canvasSource.height) {
+            return;
+        }
+        if (!this.isAxisAlignedPlacedLayerTransform()) {
+            console.warn(`PsdImage-> smart object ${this.name} transform is not axis-aligned, skip transparent trim`);
+            return;
+        }
+        let bbox = this.computeVisibleAlphaBounds(canvasSource);
+        if (!bbox) {
+            console.warn(`PsdImage-> smart object ${this.name} has no visible pixels, keep original canvas`);
+            return;
+        }
+        if (bbox.left <= 0 && bbox.top <= 0 && bbox.right >= canvasSource.width && bbox.bottom >= canvasSource.height) {
+            return;
+        }
+        let croppedCanvas = canvas_1.default.createCanvas(bbox.right - bbox.left, bbox.bottom - bbox.top);
+        let ctx = croppedCanvas.getContext('2d');
+        ctx.drawImage(canvasSource, bbox.left, bbox.top, bbox.right - bbox.left, bbox.bottom - bbox.top, 0, 0, bbox.right - bbox.left, bbox.bottom - bbox.top);
+        this.source.canvas = croppedCanvas;
+        this.rect.left += bbox.left;
+        this.rect.top += bbox.top;
+        this.rect.right = this.rect.left + croppedCanvas.width;
+        this.rect.bottom = this.rect.top + croppedCanvas.height;
+    }
+    isAxisAlignedPlacedLayerTransform() {
+        var _a;
+        let transform = (_a = this.source.placedLayer) === null || _a === void 0 ? void 0 : _a.transform;
+        if (!Array.isArray(transform) || transform.length < 8) {
+            return true;
+        }
+        let tolerance = PsdImage.SMART_OBJECT_TRANSFORM_TOLERANCE;
+        let [x1, y1, x2, y2, x3, y3, x4, y4] = transform;
+        return Math.abs(y1 - y2) <= tolerance
+            && Math.abs(x2 - x3) <= tolerance
+            && Math.abs(y3 - y4) <= tolerance
+            && Math.abs(x4 - x1) <= tolerance;
+    }
+    computeVisibleAlphaBounds(canvasSource) {
+        let ctx = canvasSource.getContext('2d');
+        let imageData = ctx.getImageData(0, 0, canvasSource.width, canvasSource.height);
+        let data = imageData.data;
+        let left = canvasSource.width;
+        let right = -1;
+        let top = canvasSource.height;
+        let bottom = -1;
+        for (let y = 0; y < canvasSource.height; y++) {
+            for (let x = 0; x < canvasSource.width; x++) {
+                let alpha = data[(y * canvasSource.width + x) * 4 + 3];
+                if (alpha === 0) {
+                    continue;
+                }
+                if (x < left) {
+                    left = x;
+                }
+                if (x > right) {
+                    right = x;
+                }
+                if (y < top) {
+                    top = y;
+                }
+                if (y > bottom) {
+                    bottom = y;
+                }
+            }
+        }
+        if (right < left || bottom < top) {
+            return null;
+        }
+        return {
+            left,
+            top,
+            right: right + 1,
+            bottom: bottom + 1,
+        };
+    }
 }
 exports.PsdImage = PsdImage;
+PsdImage.SMART_OBJECT_TRANSFORM_TOLERANCE = 0.01;
