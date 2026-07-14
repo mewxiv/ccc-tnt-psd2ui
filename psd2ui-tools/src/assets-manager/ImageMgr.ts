@@ -64,6 +64,9 @@ class ImageMgr {
 
     /** 尝试获取有编号的图像图层 */
     getSerialNumberImage(psdImage: PsdImage) {
+        if (psdImage.autoBindTarget) {
+            return psdImage.autoBindTarget;
+        }
         let bind = psdImage.attr.comps.flip?.bind ?? psdImage.attr.comps.img?.bind;
         if (typeof bind != 'undefined') {
             if (this._imageIdKeyMap.has(bind)) {

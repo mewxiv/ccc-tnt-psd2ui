@@ -22,6 +22,12 @@ export class PsdImage extends PsdLayer {
 
     declare s9: Border;
 
+    autoBindTarget?: PsdImage;
+    autoFlipXBinding: boolean = false;
+    autoFlipYBinding: boolean = false;
+    autoIgnoreImageByHeuristic: boolean = false;
+    autoIgnoreNodeByHeuristic: boolean = false;
+
     private static readonly SMART_OBJECT_TRANSFORM_TOLERANCE = 0.01;
 
     constructor(source: any, parent: PsdLayer, rootDoc: PsdLayer) {
@@ -55,26 +61,112 @@ export class PsdImage extends PsdLayer {
 
     isIgnore() {
         // 
-        if (this.attr.comps.ignore || this.attr.comps.ignoreimg) {
+        if (this.attr.comps.ignore || this.attr.comps.ignoreimg || this.autoIgnoreImageByHeuristic) {
             return true;
         }
         return false;
     }
 
+    shouldIgnoreNode() {
+        return !!(this.attr.comps.ignore || this.attr.comps.ignorenode || this.autoIgnoreNodeByHeuristic);
+    }
+
     /** 是否是镜像图片 */
     isBind() {
         return typeof this.attr.comps.flip?.bind !== 'undefined'
-            || typeof this.attr.comps.img?.bind !== 'undefined';
+            || typeof this.attr.comps.img?.bind !== 'undefined'
+            || !!this.autoBindTarget;
     }
 
     /** 是否是 x 方向镜像图片 */
     isFlipX() {
-        return typeof this.attr.comps.flipX?.bind !== 'undefined';
+        return typeof this.attr.comps.flipX?.bind !== 'undefined' || this.autoFlipXBinding;
     }
 
     /** 是否是 y 方向镜像图片 */
     isFlipY() {
-        return typeof this.attr.comps.flipY?.bind !== 'undefined';
+        return typeof this.attr.comps.flipY?.bind !== 'undefined' || this.autoFlipYBinding;
+    }
+
+    setAutoBinding(target: PsdImage, options: { flipX?: boolean, flipY?: boolean } = {}) {
+        this.autoBindTarget = target;
+        this.autoFlipXBinding = !!options.flipX;
+        this.autoFlipYBinding = !!options.flipY;
+    }
+
+    markIgnoredByHeuristic(options: { removeNode?: boolean } = {}) {
+        this.autoIgnoreImageByHeuristic = true;
+        this.autoIgnoreNodeByHeuristic = !!options.removeNode;
+    }
+
+    hasComplexCompositeContext() {
+        return !!(this.source?.clipping
+            || this.source?.mask
+            || this.source?.vectorMask
+            || (this.source?.blendMode && this.source.blendMode !== 'normal'));
+    }
+
+    looksLikeUniformColorFill(sampleStride = 8, tolerance = 4) {
+        let canvasSource: canvas.Canvas = this.source.canvas;
+        if (!canvasSource) {
+            return false;
+        }
+
+        let ctx = canvasSource.getContext('2d');
+        let imageData = ctx.getImageData(0, 0, canvasSource.width, canvasSource.height);
+        let data = imageData.data;
+        let baseR = -1;
+        let baseG = -1;
+        let baseB = -1;
+        let coveredPixels = 0;
+        let sampledPixels = 0;
+
+        for (let y = 0; y < canvasSource.height; y += sampleStride) {
+            for (let x = 0; x < canvasSource.width; x += sampleStride) {
+                let idx = (y * canvasSource.width + x) * 4;
+                let alpha = data[idx + 3];
+                if (alpha === 0) {
+                    continue;
+                }
+
+                sampledPixels += 1;
+                coveredPixels += 1;
+
+                let r = data[idx];
+                let g = data[idx + 1];
+                let b = data[idx + 2];
+
+                if (baseR === -1) {
+                    baseR = r;
+                    baseG = g;
+                    baseB = b;
+                    continue;
+                }
+
+                if (Math.abs(r - baseR) > tolerance
+                    || Math.abs(g - baseG) > tolerance
+                    || Math.abs(b - baseB) > tolerance) {
+                    return false;
+                }
+            }
+        }
+
+        if (!sampledPixels) {
+            return false;
+        }
+
+        let sampledGridWidth = Math.ceil(canvasSource.width / sampleStride);
+        let sampledGridHeight = Math.ceil(canvasSource.height / sampleStride);
+        let totalSamples = sampledGridWidth * sampledGridHeight;
+        return coveredPixels / totalSamples >= 0.95;
+    }
+
+    coversMostOfParent(threshold = 0.9) {
+        if (!this.parent?.size?.width || !this.parent?.size?.height) {
+            return false;
+        }
+        return this.size.width / this.parent.size.width >= threshold
+            && this.size.height / this.parent.size.height >= threshold;
     }
 
     // 根据锚点计算坐标

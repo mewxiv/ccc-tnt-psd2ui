@@ -56,11 +56,12 @@ class ImageMgr {
     }
     /** 尝试获取有编号的图像图层 */
     getSerialNumberImage(psdImage) {
-        var _a, _b, _c;
+        var _a, _b;
+        var _c;
         if (psdImage.autoBindTarget) {
             return psdImage.autoBindTarget;
         }
-        let bind = (_b = (_a = psdImage.attr.comps.flip) === null || _a === void 0 ? void 0 : _a.bind) !== null && _b !== void 0 ? _b : (_c = psdImage.attr.comps.img) === null || _c === void 0 ? void 0 : _c.bind;
+        let bind = (_c = (_a = psdImage.attr.comps.flip) === null || _a === void 0 ? void 0 : _a.bind) !== null && _c !== void 0 ? _c : (_b = psdImage.attr.comps.img) === null || _b === void 0 ? void 0 : _b.bind;
         if (typeof bind != 'undefined') {
             if (this._imageIdKeyMap.has(bind)) {
                 return this._imageIdKeyMap.get(bind);
