@@ -87,12 +87,10 @@ export class ImageCacheMgr {
         for (let i = 0; i < pngs.length; i++) {
             const png = pngs[i];
             let md5 = fileUtils.getMD5(png);
-            let baseName = path.basename(png);
-            let fileName = baseName.split(".")[0];
             console.log(`ImageCacheMgr->缓存 `, png);
             let imageWarp = this._loadImageMetaWarp(`${png}.meta`);
             if (imageWarp) {
-                this.set(fileName, imageWarp);
+                this.set(md5, imageWarp);
             }
         }
     }

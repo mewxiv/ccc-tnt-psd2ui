@@ -15,8 +15,8 @@ class ImageMgr {
         var _a;
         // 不忽略导出图片
         if (!psdImage.isIgnore() && !psdImage.isBind()) {
-            if (!this._imageMapMd5Key.has(psdImage.name)) {
-                this._imageMapMd5Key.set(psdImage.name, psdImage);
+            if (!this._imageMapMd5Key.has(psdImage.md5)) {
+                this._imageMapMd5Key.set(psdImage.md5, psdImage);
             }
         }
         if (typeof ((_a = psdImage.attr.comps.img) === null || _a === void 0 ? void 0 : _a.id) != "undefined") {
@@ -39,7 +39,7 @@ class ImageMgr {
     handleSameImgName(psdImage, imgName, idx) {
         if (this._imageMapImgNameKey.has(imgName)) {
             let _psdImage = this._imageMapImgNameKey.get(imgName);
-            if (_psdImage.name != psdImage.name) {
+            if (_psdImage.md5 != psdImage.md5) {
                 this.handleSameImgName(psdImage, `${psdImage.imgName}_R${idx}`, idx + 1);
             }
             else {
@@ -74,6 +74,7 @@ class ImageMgr {
     clear() {
         this._imageIdKeyMap.clear();
         this._imageMapMd5Key.clear();
+        this._imageMapImgNameKey.clear();
     }
     static getInstance() {
         if (!this._instance) {

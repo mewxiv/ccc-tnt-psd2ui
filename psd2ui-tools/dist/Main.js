@@ -344,7 +344,7 @@ class Main {
                     node._lscale = new CCVec3_1.CCVec3(layer.scale.x, layer.scale.y, layer.scale.z);
                 }
                 // 使用已缓存的 图片 的 uuid
-                let imageWarp = ImageCacheMgr_1.imageCacheMgr.get(_layer.name);
+                let imageWarp = ImageCacheMgr_1.imageCacheMgr.get(_layer.md5);
                 sprite.setSpriteFrame(imageWarp ? imageWarp.textureUuid : _layer.textureUuid);
             }
             this.applyConfig(sprite);
@@ -399,16 +399,16 @@ class Main {
             // 查找镜像
             let _layer = ImageMgr_1.imageMgr.getSerialNumberImage(psdImage);
             // 查找已缓存的相同图像
-            let imageWarp = ImageCacheMgr_1.imageCacheMgr.get(_layer.name);
+            let imageWarp = ImageCacheMgr_1.imageCacheMgr.get(_layer.md5);
             // 不是强制导出的话，判断是否已经导出过
             if (!this.isForceImg) {
                 // 判断是否已经导出过相同 md5 的资源，不再重复导出
                 if (imageWarp === null || imageWarp === void 0 ? void 0 : imageWarp.isOutput) {
-                    console.log(`已有相同资源，不再导出 [${psdImage.imgName}]  md5: ${psdImage.name}`);
+                    console.log(`已有相同资源，不再导出 [${psdImage.imgName}]  md5: ${psdImage.md5}`);
                     return;
                 }
             }
-            console.log(`保存图片 [${_layer.imgName}] md5: ${_layer.name}`);
+            console.log(`保存图片 [${_layer.imgName}] md5: ${_layer.md5}`);
             imageWarp && (imageWarp.isOutput = true);
             let fullPath = path_1.default.join(out, `${_layer.imgName}.png`);
             fs_extra_1.default.writeFileSync(fullPath, _layer.imgBuffer);
@@ -417,7 +417,7 @@ class Main {
     }
     saveImageMeta(layer, fullPath) {
         let _layer = ImageMgr_1.imageMgr.getSerialNumberImage(layer);
-        let imageWarp = ImageCacheMgr_1.imageCacheMgr.get(_layer.name);
+        let imageWarp = ImageCacheMgr_1.imageCacheMgr.get(_layer.md5);
         if (!imageWarp) {
             imageWarp = _layer;
         }
