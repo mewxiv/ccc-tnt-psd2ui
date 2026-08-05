@@ -78,22 +78,25 @@ class Parser {
                     }
                     // Image
                     let image = layer = new PsdImage_1.PsdImage(source, parent, rootDoc);
-                    ImageMgr_1.imageMgr.add(image);
-                    // 没有设置忽略且不说镜像的情况下才进行缓存
-                    if (!image.isIgnore() && !image.isBind()) {
-                    if (!ImageCacheMgr_1.imageCacheMgr.has(image.md5)) {
-                        ImageCacheMgr_1.imageCacheMgr.set(image.md5, {
-                                uuid: image.uuid,
-                                textureUuid: image.textureUuid,
-                            });
-                        }
-                    }
+                    this.registerImage(image);
                 }
                 break;
             case LayerType_1.LayerType.Text:
                 {
-                    //  Text
-                    layer = new PsdText_1.PsdText(source, parent, rootDoc);
+                    // Cocos 2.4 labels cannot represent Photoshop gradient fills or strokes.
+                    if (this.shouldRasterizeText(source)) {
+                        if (!source.canvas) {
+                            console.error(`Parser-> 空文本图层 ${source === null || source === void 0 ? void 0 : source.name}`);
+                            return null;
+                        }
+                        const image = new PsdImage_1.PsdImage(source, parent, rootDoc);
+                        this.registerImage(image);
+                        layer = image;
+                        layerType = LayerType_1.LayerType.Image;
+                    }
+                    else {
+                        layer = new PsdText_1.PsdText(source, parent, rootDoc);
+                    }
                 }
                 break;
             default:
@@ -106,6 +109,28 @@ class Parser {
             this.applyHeuristics(layer);
         }
         return layer;
+    }
+    registerImage(image) {
+        ImageMgr_1.imageMgr.add(image);
+        if (!image.isIgnore() && !image.isBind() && !ImageCacheMgr_1.imageCacheMgr.has(image.md5)) {
+            ImageCacheMgr_1.imageCacheMgr.set(image.md5, {
+                uuid: image.uuid,
+                textureUuid: image.textureUuid,
+            });
+        }
+    }
+    shouldRasterizeText(source) {
+        const effects = source === null || source === void 0 ? void 0 : source.effects;
+        if (!effects)
+            return false;
+        const gradientOverlay = this.enabledEffect(effects.gradientOverlay);
+        const stroke = this.enabledEffect(effects.stroke);
+        return !!(gradientOverlay || (stroke && stroke.fillType === 'gradient'));
+    }
+    enabledEffect(value) {
+        if (Array.isArray(value))
+            return value.find((entry) => entry && entry.enabled);
+        return (value === null || value === void 0 ? void 0 : value.enabled) ? value : null;
     }
     applyHeuristics(root) {
         this.applyMirrorCopyHeuristics(root);

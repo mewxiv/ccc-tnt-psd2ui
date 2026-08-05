@@ -229,7 +229,10 @@ export abstract class PsdLayer {
             return false;
         }
         this.hidden = _source.hidden;
-        this.opacity = Math.round(_source.opacity * 255);
+        // Photoshop stores fill opacity independently from layer opacity.
+        const layerOpacity = Number.isFinite(_source.opacity) ? _source.opacity : 1;
+        const fillOpacity = Number.isFinite(_source.fillOpacity) ? _source.fillOpacity : 1;
+        this.opacity = Math.round(layerOpacity * fillOpacity * 255);
 
         // 获取锚点
         let ar = this.attr.comps.ar;

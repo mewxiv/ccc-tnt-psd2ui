@@ -62,6 +62,8 @@ let CCLabel = class CCLabel extends CCComponent_1.CCComponent {
     }
     updateWithLayer(psdLayer) {
         this._fontSize = psdLayer.fontSize;
+        if (psdLayer.fontFamily)
+            this._N$fontFamily = psdLayer.fontFamily;
         // this._actualFontSize = this._fontSize;
         this._string = this._N$string = psdLayer.text;
         this._lineHeight = this._fontSize + config_1.config.textLineHeightOffset;

@@ -76,23 +76,24 @@ export class Parser {
                 }
                 // Image
                 let image = layer = new PsdImage(source, parent, rootDoc);
-                imageMgr.add(image);
-
-                // 没有设置忽略且不说镜像的情况下才进行缓存
-                if (!image.isIgnore() && !image.isBind()) {
-                    if (!imageCacheMgr.has(image.md5)) {
-                        imageCacheMgr.set(image.md5, {
-                            uuid: image.uuid,
-                            textureUuid: image.textureUuid,
-                        });
-                    }
-                }
+                this.registerImage(image);
             }
                 break;
 
             case LayerType.Text: {
-                //  Text
-                layer = new PsdText(source, parent, rootDoc);
+                // Cocos 2.4 labels cannot represent Photoshop gradient fills or strokes.
+                if (this.shouldRasterizeText(source)) {
+                    if (!source.canvas) {
+                        console.error(`Parser-> 空文本图层 ${source?.name}`);
+                        return null;
+                    }
+                    const image = new PsdImage(source, parent, rootDoc);
+                    this.registerImage(image);
+                    layer = image;
+                    layerType = LayerType.Image;
+                } else {
+                    layer = new PsdText(source, parent, rootDoc);
+                }
             }
                 break;
 
@@ -106,6 +107,29 @@ export class Parser {
             this.applyHeuristics(layer as PsdDocument);
         }
         return layer;
+    }
+
+    private registerImage(image: PsdImage) {
+        imageMgr.add(image);
+        if (!image.isIgnore() && !image.isBind() && !imageCacheMgr.has(image.md5)) {
+            imageCacheMgr.set(image.md5, {
+                uuid: image.uuid,
+                textureUuid: image.textureUuid,
+            });
+        }
+    }
+
+    private shouldRasterizeText(source: any) {
+        const effects = source?.effects;
+        if (!effects) return false;
+        const gradientOverlay = this.enabledEffect(effects.gradientOverlay);
+        const stroke = this.enabledEffect(effects.stroke);
+        return !!(gradientOverlay || (stroke && stroke.fillType === 'gradient'));
+    }
+
+    private enabledEffect(value: any) {
+        if (Array.isArray(value)) return value.find((entry: any) => entry && entry.enabled);
+        return value?.enabled ? value : null;
     }
 
     private applyHeuristics(root: PsdDocument) {

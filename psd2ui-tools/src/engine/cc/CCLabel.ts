@@ -99,6 +99,7 @@ export class CCLabel extends CCComponent{
     
     updateWithLayer(psdLayer: PsdText) {
         this._fontSize = psdLayer.fontSize;
+        if (psdLayer.fontFamily) this._N$fontFamily = psdLayer.fontFamily;
         // this._actualFontSize = this._fontSize;
         this._string = this._N$string = psdLayer.text;
         

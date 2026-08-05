@@ -6,6 +6,7 @@ const Color_1 = require("../values/Color");
 const PsdLayer_1 = require("./PsdLayer");
 class PsdText extends PsdLayer_1.PsdLayer {
     parseSource() {
+        var _a;
         super.parseSource();
         let textSource = this.source.text;
         let style = textSource.style;
@@ -16,6 +17,7 @@ class PsdText extends PsdLayer_1.PsdLayer {
             }
         }
         this.text = textSource.text;
+        this.fontFamily = ((_a = style === null || style === void 0 ? void 0 : style.font) === null || _a === void 0 ? void 0 : _a.name) || '';
         // 可能会对文本图层进行缩放，这里计算缩放之后的时机字体大小
         if (Math.abs(1 - textSource.transform[0]) > 0.001) {
             this.fontSize = Math.round(style.fontSize * textSource.transform[0] * 100) / 100;

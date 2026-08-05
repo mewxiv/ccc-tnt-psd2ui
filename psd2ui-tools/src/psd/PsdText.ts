@@ -10,6 +10,7 @@ export class PsdText extends PsdLayer {
     declare text: string;
     declare fontSize: number;
     declare font: string;
+    declare fontFamily: string;
     declare outline: { width: number, color: Color }; // 描边
     declare offsetY: number;
 
@@ -25,6 +26,7 @@ export class PsdText extends PsdLayer {
             }
         }
         this.text = textSource.text;
+        this.fontFamily = style?.font?.name || '';
 
         // 可能会对文本图层进行缩放，这里计算缩放之后的时机字体大小
         if (Math.abs(1 - textSource.transform[0]) > 0.001) {

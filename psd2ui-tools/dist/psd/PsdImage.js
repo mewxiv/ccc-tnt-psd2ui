@@ -23,6 +23,7 @@ class PsdImage extends PsdLayer_1.PsdLayer {
         // img name
         this.imgName = ((_a = this.attr.comps.img) === null || _a === void 0 ? void 0 : _a.name) || this.name;
         this.trimPlacedLayerTransparentPadding();
+        this.applyLayerStyle();
         // .9
         if (this.attr.comps['.9']) {
             let s9 = this.attr.comps['.9'];
@@ -35,6 +36,145 @@ class PsdImage extends PsdLayer_1.PsdLayer {
         this.md5 = FileUtils_1.fileUtils.getMD5(this.imgBuffer);
         this.textureSize = new Size_1.Size(canvas.width, canvas.height);
         this.scale = new Vec3_1.Vec3((this.isFlipX() ? -1 : 1) * this.scale.x, (this.isFlipY() ? -1 : 1) * this.scale.y, 1);
+    }
+    /** Bake Photoshop effects which Cocos 2.4 sprites and labels cannot represent. */
+    applyLayerStyle() {
+        var _a, _b, _c, _d, _e;
+        const sourceCanvas = this.source.canvas;
+        const effects = (this.source.vectorMask || this.source.text) && this.source.effects;
+        if (!sourceCanvas || !effects)
+            return;
+        const solidFill = this.enabledEffect(effects.solidFill);
+        const gradientOverlay = this.enabledEffect(effects.gradientOverlay);
+        const outerGlow = this.enabledEffect(effects.outerGlow);
+        const innerGlow = this.enabledEffect(effects.innerGlow);
+        const dropShadow = this.enabledEffect(effects.dropShadow);
+        const stroke = this.enabledEffect(effects.stroke);
+        if (this.source.vectorMask && !solidFill && !gradientOverlay)
+            return;
+        if (!solidFill && !gradientOverlay && !outerGlow && !innerGlow && !dropShadow && !stroke)
+            return;
+        const width = sourceCanvas.width;
+        const height = sourceCanvas.height;
+        const styled = canvas_1.default.createCanvas(width, height);
+        const styledContext = styled.getContext('2d');
+        const shadow = outerGlow || dropShadow;
+        if (shadow) {
+            styledContext.save();
+            styledContext.shadowColor = this.cssColor(shadow.color, shadow.opacity);
+            styledContext.shadowBlur = Number((_a = shadow.size) === null || _a === void 0 ? void 0 : _a.value) || 0;
+            if (dropShadow && !outerGlow) {
+                const distance = Number((_b = dropShadow.distance) === null || _b === void 0 ? void 0 : _b.value) || 0;
+                const shadowAngle = Number(dropShadow.angle);
+                const angle = (Number.isFinite(shadowAngle) ? shadowAngle : 90) * Math.PI / 180;
+                styledContext.shadowOffsetX = Math.cos(angle) * distance;
+                styledContext.shadowOffsetY = Math.sin(angle) * distance;
+            }
+            styledContext.drawImage(sourceCanvas, 0, 0);
+            styledContext.restore();
+        }
+        if (stroke) {
+            const radius = Math.max(1, Math.round(Number((_c = stroke.size) === null || _c === void 0 ? void 0 : _c.value) || 1));
+            const strokeMask = this.dilate(sourceCanvas, radius);
+            const maskContext = strokeMask.getContext('2d');
+            maskContext.globalCompositeOperation = 'destination-out';
+            maskContext.drawImage(sourceCanvas, 0, 0);
+            this.paintMask(styledContext, strokeMask, stroke.gradient || null, stroke.color, stroke.opacity, (_d = stroke.gradient) === null || _d === void 0 ? void 0 : _d.angle);
+        }
+        if (!(gradientOverlay === null || gradientOverlay === void 0 ? void 0 : gradientOverlay.gradient) && !(solidFill === null || solidFill === void 0 ? void 0 : solidFill.color)) {
+            styledContext.drawImage(sourceCanvas, 0, 0);
+        }
+        if (gradientOverlay === null || gradientOverlay === void 0 ? void 0 : gradientOverlay.gradient) {
+            this.paintMask(styledContext, sourceCanvas, gradientOverlay.gradient, null, gradientOverlay.opacity, gradientOverlay.angle);
+        }
+        else if (solidFill === null || solidFill === void 0 ? void 0 : solidFill.color) {
+            this.paintMask(styledContext, sourceCanvas, null, solidFill.color, solidFill.opacity);
+        }
+        if (innerGlow) {
+            const radius = Math.max(1, Math.round(Number((_e = innerGlow.size) === null || _e === void 0 ? void 0 : _e.value) || 1));
+            this.paintMask(styledContext, this.innerEdge(sourceCanvas, radius), null, innerGlow.color, innerGlow.opacity);
+        }
+        this.source.canvas = styled;
+    }
+    enabledEffect(value) {
+        if (Array.isArray(value))
+            return value.find((entry) => entry && entry.enabled);
+        return (value === null || value === void 0 ? void 0 : value.enabled) ? value : null;
+    }
+    dilate(sourceCanvas, radius) {
+        const mask = canvas_1.default.createCanvas(sourceCanvas.width, sourceCanvas.height);
+        const context = mask.getContext('2d');
+        for (let y = -radius; y <= radius; y++) {
+            for (let x = -radius; x <= radius; x++) {
+                if (x * x + y * y <= radius * radius)
+                    context.drawImage(sourceCanvas, x, y);
+            }
+        }
+        return mask;
+    }
+    innerEdge(sourceCanvas, radius) {
+        const mask = canvas_1.default.createCanvas(sourceCanvas.width, sourceCanvas.height);
+        const sourceContext = sourceCanvas.getContext('2d');
+        const sourceData = sourceContext.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height);
+        const edgeData = mask.getContext('2d').createImageData(sourceCanvas.width, sourceCanvas.height);
+        for (let y = 0; y < sourceCanvas.height; y++) {
+            for (let x = 0; x < sourceCanvas.width; x++) {
+                const index = (y * sourceCanvas.width + x) * 4;
+                if (sourceData.data[index + 3] === 0)
+                    continue;
+                let edge = false;
+                for (let offsetY = -radius; offsetY <= radius && !edge; offsetY++) {
+                    for (let offsetX = -radius; offsetX <= radius; offsetX++) {
+                        if (offsetX * offsetX + offsetY * offsetY > radius * radius)
+                            continue;
+                        const sampleX = x + offsetX;
+                        const sampleY = y + offsetY;
+                        if (sampleX < 0 || sampleY < 0 || sampleX >= sourceCanvas.width || sampleY >= sourceCanvas.height
+                            || sourceData.data[(sampleY * sourceCanvas.width + sampleX) * 4 + 3] === 0) {
+                            edge = true;
+                            break;
+                        }
+                    }
+                }
+                if (edge)
+                    edgeData.data[index + 3] = sourceData.data[index + 3];
+            }
+        }
+        mask.getContext('2d').putImageData(edgeData, 0, 0);
+        return mask;
+    }
+    paintMask(target, mask, gradient, color, opacity = 1, angle = 90) {
+        var _a;
+        const fill = canvas_1.default.createCanvas(mask.width, mask.height);
+        const fillContext = fill.getContext('2d');
+        fillContext.drawImage(mask, 0, 0);
+        fillContext.globalCompositeOperation = 'source-in';
+        if ((_a = gradient === null || gradient === void 0 ? void 0 : gradient.colorStops) === null || _a === void 0 ? void 0 : _a.length) {
+            const gradientAngle = Number(angle);
+            const radians = (Number.isFinite(gradientAngle) ? gradientAngle : 90) * Math.PI / 180;
+            const dx = Math.cos(radians) * mask.width;
+            const dy = Math.sin(radians) * mask.height;
+            const gradientFill = fillContext.createLinearGradient(mask.width / 2 - dx / 2, mask.height / 2 - dy / 2, mask.width / 2 + dx / 2, mask.height / 2 + dy / 2);
+            gradient.colorStops.forEach((stop) => {
+                var _a, _b, _c;
+                const stopOpacity = (_c = (_b = (_a = gradient.opacityStops) === null || _a === void 0 ? void 0 : _a.find((entry) => entry.location === stop.location)) === null || _b === void 0 ? void 0 : _b.opacity) !== null && _c !== void 0 ? _c : 1;
+                gradientFill.addColorStop(Math.max(0, Math.min(1, Number(stop.location) || 0)), this.cssColor(stop.color, stopOpacity * opacity));
+            });
+            fillContext.fillStyle = gradientFill;
+        }
+        else if (color) {
+            const fillOpacity = Number(opacity);
+            fillContext.fillStyle = this.cssColor(color, Number.isFinite(fillOpacity) ? fillOpacity : 1);
+        }
+        else {
+            return;
+        }
+        fillContext.fillRect(0, 0, mask.width, mask.height);
+        target.drawImage(fill, 0, 0);
+    }
+    cssColor(color, opacity = 1) {
+        const alpha = Math.max(0, Math.min(1, Number(opacity !== null && opacity !== void 0 ? opacity : 1)));
+        return `rgba(${Math.round(Number(color === null || color === void 0 ? void 0 : color.r) || 0)}, ${Math.round(Number(color === null || color === void 0 ? void 0 : color.g) || 0)}, ${Math.round(Number(color === null || color === void 0 ? void 0 : color.b) || 0)}, ${alpha})`;
     }
     onCtor() {
     }
