@@ -354,8 +354,7 @@ export class Main {
                 }
 
 
-                // 使用已缓存的 图片 的 uuid
-                let imageWarp = imageCacheMgr.get(_layer.md5);
+                let imageWarp = this.resolveImageWarp(_layer);
                 sprite.setSpriteFrame(imageWarp ? imageWarp.textureUuid : _layer.textureUuid);
             }
 
@@ -416,8 +415,8 @@ export class Main {
             // 查找镜像
             let _layer = imageMgr.getSerialNumberImage(psdImage);
 
-            // 查找已缓存的相同图像
-            let imageWarp = imageCacheMgr.get(_layer.md5);
+            // Cache identities belong to other outputs and must not be marked by a forced export.
+            let imageWarp = this.isForceImg ? null : imageCacheMgr.get(_layer.md5);
 
             // 不是强制导出的话，判断是否已经导出过
             if (!this.isForceImg) {
@@ -436,12 +435,18 @@ export class Main {
 
     }
 
+    resolveImageWarp(layer: PsdImage) {
+        let boundLayer = imageMgr.getSerialNumberImage(layer);
+        if (this.isForceImg) {
+            // Share one identity for duplicate pixels inside this PSD, but never across PSD outputs.
+            return imageMgr.getAllImage().get(boundLayer.md5) || boundLayer;
+        }
+        return imageCacheMgr.get(boundLayer.md5) || boundLayer;
+    }
+
     saveImageMeta(layer: PsdImage, fullPath: string) {
         let _layer = imageMgr.getSerialNumberImage(layer);
-        let imageWarp = imageCacheMgr.get(_layer.md5);
-        if (!imageWarp) {
-            imageWarp = _layer;
-        }
+        let imageWarp = this.resolveImageWarp(_layer);
 
         // 2.4.9 =-> SPRITE_FRAME_UUID
         let meta = this.spriteFrameMetaContent.replace(/\$SPRITE_FRAME_UUID/g, imageWarp.uuid)
