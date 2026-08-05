@@ -343,8 +343,7 @@ class Main {
                     node._trs.setScale(layer.scale.x, layer.scale.y, layer.scale.z);
                     node._lscale = new CCVec3_1.CCVec3(layer.scale.x, layer.scale.y, layer.scale.z);
                 }
-                // 使用已缓存的 图片 的 uuid
-                let imageWarp = ImageCacheMgr_1.imageCacheMgr.get(_layer.md5);
+                let imageWarp = this.resolveImageWarp(_layer);
                 sprite.setSpriteFrame(imageWarp ? imageWarp.textureUuid : _layer.textureUuid);
             }
             this.applyConfig(sprite);
@@ -398,8 +397,8 @@ class Main {
         images.forEach((psdImage, k) => {
             // 查找镜像
             let _layer = ImageMgr_1.imageMgr.getSerialNumberImage(psdImage);
-            // 查找已缓存的相同图像
-            let imageWarp = ImageCacheMgr_1.imageCacheMgr.get(_layer.md5);
+            // Cache identities belong to other outputs and must not be marked by a forced export.
+            let imageWarp = this.isForceImg ? null : ImageCacheMgr_1.imageCacheMgr.get(_layer.md5);
             // 不是强制导出的话，判断是否已经导出过
             if (!this.isForceImg) {
                 // 判断是否已经导出过相同 md5 的资源，不再重复导出
@@ -415,12 +414,17 @@ class Main {
             this.saveImageMeta(_layer, fullPath);
         });
     }
+    resolveImageWarp(layer) {
+        let boundLayer = ImageMgr_1.imageMgr.getSerialNumberImage(layer);
+        if (this.isForceImg) {
+            // Share one identity for duplicate pixels inside this PSD, but never across PSD outputs.
+            return ImageMgr_1.imageMgr.getAllImage().get(boundLayer.md5) || boundLayer;
+        }
+        return ImageCacheMgr_1.imageCacheMgr.get(boundLayer.md5) || boundLayer;
+    }
     saveImageMeta(layer, fullPath) {
         let _layer = ImageMgr_1.imageMgr.getSerialNumberImage(layer);
-        let imageWarp = ImageCacheMgr_1.imageCacheMgr.get(_layer.md5);
-        if (!imageWarp) {
-            imageWarp = _layer;
-        }
+        let imageWarp = this.resolveImageWarp(_layer);
         // 2.4.9 =-> SPRITE_FRAME_UUID
         let meta = this.spriteFrameMetaContent.replace(/\$SPRITE_FRAME_UUID/g, imageWarp.uuid);
         meta = meta.replace(/\$TEXTURE_UUID/g, imageWarp.textureUuid);

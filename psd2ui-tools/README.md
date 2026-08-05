@@ -289,8 +289,8 @@ textOffsetY label节点 Y 偏移
 
 ```
 
-### 已知bug
-使用 强制导出图片选项时，输入为多个 psd 或含有多个 psd 文件的文件夹时，如果在不同 psd 含有相同 md5 的图像，则会在各自目录下生成相同 uuid 的图片
+### UUID bug（已修复）
+强制导出时，相同 MD5 图片在同一个 PSD 内共享资源身份，不同 PSD 输出目录使用独立的 texture 和 sprite-frame UUID。
 
 
 
