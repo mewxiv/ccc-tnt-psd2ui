@@ -145,6 +145,184 @@ test('clipped layer is removed when its Photoshop clipping base is hidden', () =
   assert.deepEqual(document.children[0].children.map((layer) => layer.source.name), ['hidden-base']);
 });
 
+test('clipping chain bakes the shared base alpha before image registration', () => {
+  const baseCanvas = canvas.createCanvas(4, 3);
+  const baseContext = baseCanvas.getContext('2d');
+  const basePixels = baseContext.createImageData(4, 3);
+  const alpha = [
+    0, 0, 0, 0,
+    0, 128, 255, 0,
+    0, 0, 0, 0,
+  ];
+  alpha.forEach((value, index) => {
+    basePixels.data[index * 4] = 255;
+    basePixels.data[index * 4 + 3] = value;
+  });
+  baseContext.putImageData(basePixels, 0, 0);
+
+  function clippedCanvas(color, opacity) {
+    const result = canvas.createCanvas(6, 4);
+    const context = result.getContext('2d');
+    context.fillStyle = color;
+    context.globalAlpha = opacity;
+    context.fillRect(0, 0, 6, 4);
+    return result;
+  }
+
+  const parser = new Parser();
+  const document = parser.parseLayer({
+    name: 'document',
+    width: 30,
+    height: 20,
+    children: [{
+      name: 'group',
+      children: [{
+        name: 'base',
+        left: 12,
+        top: 8,
+        right: 16,
+        bottom: 11,
+        hidden: false,
+        opacity: 1,
+        canvas: baseCanvas,
+      }, {
+        name: 'first-clipped',
+        left: 10,
+        top: 7,
+        right: 16,
+        bottom: 11,
+        hidden: false,
+        opacity: 1,
+        clipping: true,
+        canvas: clippedCanvas('#ff0000', 1),
+      }, {
+        name: 'second-clipped',
+        left: 11,
+        top: 8,
+        right: 17,
+        bottom: 12,
+        hidden: false,
+        opacity: 1,
+        clipping: true,
+        canvas: clippedCanvas('#0000ff', 0.5),
+      }],
+    }],
+  });
+
+  const [, first, second] = document.children[0].children;
+  assert.deepEqual(
+    [first.source.left, first.source.top, first.source.right, first.source.bottom],
+    [13, 9, 15, 10]
+  );
+  assert.deepEqual([first.source.canvas.width, first.source.canvas.height], [2, 1]);
+  assert.deepEqual([...first.source.canvas.getContext('2d').getImageData(0, 0, 2, 1).data], [
+    255, 0, 0, 128,
+    255, 0, 0, 255,
+  ]);
+
+  assert.deepEqual(
+    [second.source.left, second.source.top, second.source.right, second.source.bottom],
+    [13, 9, 15, 10]
+  );
+  assert.deepEqual([second.source.canvas.width, second.source.canvas.height], [2, 1]);
+  assert.deepEqual([...second.source.canvas.getContext('2d').getImageData(0, 0, 2, 1).data], [
+    0, 0, 255, 64,
+    0, 0, 255, 128,
+  ]);
+  assert.deepEqual([first.size.width, first.size.height], [2, 1]);
+  assert.deepEqual([second.size.width, second.size.height], [2, 1]);
+  assert.deepEqual([first.textureSize.width, first.textureSize.height], [2, 1]);
+  assert.deepEqual([second.textureSize.width, second.textureSize.height], [2, 1]);
+  assert.notEqual(first.md5, second.md5);
+});
+
+test('fully transparent clipping result keeps the node with a 1x1 texture', () => {
+  const baseCanvas = canvas.createCanvas(2, 2);
+  const clippedCanvas = canvas.createCanvas(2, 2);
+  clippedCanvas.getContext('2d').fillRect(0, 0, 2, 2);
+
+  const parser = new Parser();
+  const document = parser.parseLayer({
+    name: 'document',
+    width: 10,
+    height: 10,
+    children: [{
+      name: 'group',
+      children: [{
+        name: 'transparent-base',
+        left: 4,
+        top: 5,
+        right: 6,
+        bottom: 7,
+        hidden: false,
+        opacity: 1,
+        canvas: baseCanvas,
+      }, {
+        name: 'clipped',
+        left: 4,
+        top: 5,
+        right: 6,
+        bottom: 7,
+        hidden: false,
+        opacity: 1,
+        clipping: true,
+        canvas: clippedCanvas,
+      }],
+    }],
+  });
+
+  const clipped = document.children[0].children[1];
+  assert.deepEqual([clipped.source.canvas.width, clipped.source.canvas.height], [1, 1]);
+  assert.deepEqual(
+    [clipped.source.left, clipped.source.top, clipped.source.right, clipped.source.bottom],
+    [4, 5, 5, 6]
+  );
+  assert.deepEqual([...clipped.source.canvas.getContext('2d').getImageData(0, 0, 1, 1).data], [0, 0, 0, 0]);
+});
+
+test('unsupported clipping base warns and preserves the original clipped layer', () => {
+  const clippedCanvas = canvas.createCanvas(3, 2);
+  clippedCanvas.getContext('2d').fillRect(0, 0, 3, 2);
+  const warnings = [];
+  const originalWarn = console.warn;
+  console.warn = (message) => warnings.push(String(message));
+  try {
+    const parser = new Parser();
+    const document = parser.parseLayer({
+      name: 'document',
+      width: 10,
+      height: 10,
+      children: [{
+        name: 'group',
+        children: [{
+          name: 'base-group',
+          children: [],
+        }, {
+          name: 'clipped',
+          left: 2,
+          top: 3,
+          right: 5,
+          bottom: 5,
+          hidden: false,
+          opacity: 1,
+          clipping: true,
+          canvas: clippedCanvas,
+        }],
+      }],
+    });
+
+    const clipped = document.children[0].children[1];
+    assert.deepEqual([clipped.source.canvas.width, clipped.source.canvas.height], [3, 2]);
+    assert.deepEqual(
+      [clipped.source.left, clipped.source.top, clipped.source.right, clipped.source.bottom],
+      [2, 3, 5, 5]
+    );
+  } finally {
+    console.warn = originalWarn;
+  }
+  assert.ok(warnings.some((message) => message.includes('document/group/clipped')));
+});
+
 test('multiline Photoshop leading and paragraph alignment are preserved in Cocos labels', () => {
   const textCanvas = canvas.createCanvas(57, 158);
   const source = {
