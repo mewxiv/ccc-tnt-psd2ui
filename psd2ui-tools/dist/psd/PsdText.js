@@ -6,7 +6,7 @@ const Color_1 = require("../values/Color");
 const PsdLayer_1 = require("./PsdLayer");
 class PsdText extends PsdLayer_1.PsdLayer {
     parseSource() {
-        var _a;
+        var _a, _b, _c, _d;
         super.parseSource();
         let textSource = this.source.text;
         let style = textSource.style;
@@ -19,16 +19,34 @@ class PsdText extends PsdLayer_1.PsdLayer {
         this.text = textSource.text;
         this.fontFamily = ((_a = style === null || style === void 0 ? void 0 : style.font) === null || _a === void 0 ? void 0 : _a.name) || '';
         // 可能会对文本图层进行缩放，这里计算缩放之后的时机字体大小
-        if (Math.abs(1 - textSource.transform[0]) > 0.001) {
-            this.fontSize = Math.round(style.fontSize * textSource.transform[0] * 100) / 100;
+        const scaleX = Number((_b = textSource.transform) === null || _b === void 0 ? void 0 : _b[0]) || 1;
+        const scaleY = Math.abs(Number((_c = textSource.transform) === null || _c === void 0 ? void 0 : _c[3]) || scaleX);
+        if (Math.abs(1 - scaleX) > 0.001) {
+            this.fontSize = Math.round(style.fontSize * scaleX * 100) / 100;
         }
         else {
             this.fontSize = style.fontSize;
         }
+        const sourceLeading = Number(style === null || style === void 0 ? void 0 : style.leading);
+        this.lineHeight = this.text.includes("\n") && Number.isFinite(sourceLeading) && sourceLeading > 0
+            ? Math.round(sourceLeading * scaleY * 100) / 100
+            : this.fontSize + config_1.config.textLineHeightOffset;
+        this.horizontalAlign = this.parseHorizontalAlign((_d = textSource.paragraphStyle) === null || _d === void 0 ? void 0 : _d.justification);
         this.offsetY = config_1.config.textOffsetY[this.fontSize] || config_1.config.textOffsetY["default"] || 0;
         this.parseSolidFill();
         this.parseStroke();
         return true;
+    }
+    parseHorizontalAlign(justification) {
+        switch (String(justification || '').toLowerCase()) {
+            case 'right':
+                return 2;
+            case 'center':
+                return 1;
+            case 'left':
+            default:
+                return 0;
+        }
     }
     onCtor() {
     }

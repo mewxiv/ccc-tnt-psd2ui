@@ -39,7 +39,7 @@ class PsdImage extends PsdLayer_1.PsdLayer {
     }
     /** Bake Photoshop effects which Cocos 2.4 sprites and labels cannot represent. */
     applyLayerStyle() {
-        var _a, _b, _c, _d, _e;
+        var _a, _b, _c, _d, _e, _f;
         const sourceCanvas = this.source.canvas;
         const effects = (this.source.vectorMask || this.source.text) && this.source.effects;
         if (!sourceCanvas || !effects)
@@ -92,7 +92,9 @@ class PsdImage extends PsdLayer_1.PsdLayer {
         }
         if (innerGlow) {
             const radius = Math.max(1, Math.round(Number((_e = innerGlow.size) === null || _e === void 0 ? void 0 : _e.value) || 1));
-            this.paintMask(styledContext, this.innerEdge(sourceCanvas, radius), null, innerGlow.color, innerGlow.opacity);
+            const choke = Math.max(0, Number((_f = innerGlow.choke) === null || _f === void 0 ? void 0 : _f.value) || 0);
+            const glowMask = this.innerGlowMask(sourceCanvas, radius, choke);
+            this.paintMask(styledContext, glowMask, null, innerGlow.color, innerGlow.opacity, 90, innerGlow.blendMode);
         }
         this.source.canvas = styled;
     }
@@ -112,38 +114,59 @@ class PsdImage extends PsdLayer_1.PsdLayer {
         }
         return mask;
     }
-    innerEdge(sourceCanvas, radius) {
+    innerGlowMask(sourceCanvas, radius, choke) {
         const mask = canvas_1.default.createCanvas(sourceCanvas.width, sourceCanvas.height);
         const sourceContext = sourceCanvas.getContext('2d');
         const sourceData = sourceContext.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height);
         const edgeData = mask.getContext('2d').createImageData(sourceCanvas.width, sourceCanvas.height);
+        const paddedWidth = sourceCanvas.width + 2;
+        const paddedHeight = sourceCanvas.height + 2;
+        const maxDistance = radius + choke + 2;
+        const distances = new Float32Array(paddedWidth * paddedHeight);
+        distances.fill(maxDistance);
+        for (let y = 0; y < paddedHeight; y++) {
+            for (let x = 0; x < paddedWidth; x++) {
+                if (x === 0 || y === 0 || x === paddedWidth - 1 || y === paddedHeight - 1) {
+                    distances[y * paddedWidth + x] = 0;
+                    continue;
+                }
+                const sourceIndex = ((y - 1) * sourceCanvas.width + (x - 1)) * 4;
+                if (sourceData.data[sourceIndex + 3] === 0)
+                    distances[y * paddedWidth + x] = 0;
+            }
+        }
+        const diagonal = Math.SQRT2;
+        for (let y = 1; y < paddedHeight - 1; y++) {
+            for (let x = 1; x < paddedWidth - 1; x++) {
+                const index = y * paddedWidth + x;
+                if (distances[index] === 0)
+                    continue;
+                distances[index] = Math.min(distances[index], distances[index - 1] + 1, distances[index - paddedWidth] + 1, distances[index - paddedWidth - 1] + diagonal, distances[index - paddedWidth + 1] + diagonal);
+            }
+        }
+        for (let y = paddedHeight - 2; y >= 1; y--) {
+            for (let x = paddedWidth - 2; x >= 1; x--) {
+                const index = y * paddedWidth + x;
+                if (distances[index] === 0)
+                    continue;
+                distances[index] = Math.min(distances[index], distances[index + 1] + 1, distances[index + paddedWidth] + 1, distances[index + paddedWidth + 1] + diagonal, distances[index + paddedWidth - 1] + diagonal);
+            }
+        }
         for (let y = 0; y < sourceCanvas.height; y++) {
             for (let x = 0; x < sourceCanvas.width; x++) {
-                const index = (y * sourceCanvas.width + x) * 4;
-                if (sourceData.data[index + 3] === 0)
+                const sourceIndex = (y * sourceCanvas.width + x) * 4;
+                const sourceAlpha = sourceData.data[sourceIndex + 3];
+                if (sourceAlpha === 0)
                     continue;
-                let edge = false;
-                for (let offsetY = -radius; offsetY <= radius && !edge; offsetY++) {
-                    for (let offsetX = -radius; offsetX <= radius; offsetX++) {
-                        if (offsetX * offsetX + offsetY * offsetY > radius * radius)
-                            continue;
-                        const sampleX = x + offsetX;
-                        const sampleY = y + offsetY;
-                        if (sampleX < 0 || sampleY < 0 || sampleX >= sourceCanvas.width || sampleY >= sourceCanvas.height
-                            || sourceData.data[(sampleY * sourceCanvas.width + sampleX) * 4 + 3] === 0) {
-                            edge = true;
-                            break;
-                        }
-                    }
-                }
-                if (edge)
-                    edgeData.data[index + 3] = sourceData.data[index + 3];
+                const distance = distances[(y + 1) * paddedWidth + x + 1];
+                const fade = Math.max(0, Math.min(1, 1 - Math.max(0, distance - 1 - choke) / radius));
+                edgeData.data[sourceIndex + 3] = Math.round(sourceAlpha * fade);
             }
         }
         mask.getContext('2d').putImageData(edgeData, 0, 0);
         return mask;
     }
-    paintMask(target, mask, gradient, color, opacity = 1, angle = 90) {
+    paintMask(target, mask, gradient, color, opacity = 1, angle = 90, blendMode = 'normal') {
         var _a;
         const fill = canvas_1.default.createCanvas(mask.width, mask.height);
         const fillContext = fill.getContext('2d');
@@ -170,7 +193,24 @@ class PsdImage extends PsdLayer_1.PsdLayer {
             return;
         }
         fillContext.fillRect(0, 0, mask.width, mask.height);
+        target.save();
+        target.globalCompositeOperation = this.canvasBlendMode(blendMode);
         target.drawImage(fill, 0, 0);
+        target.restore();
+    }
+    canvasBlendMode(blendMode) {
+        switch (String(blendMode || '').toLowerCase().replace(/[_-]+/g, ' ')) {
+            case 'screen':
+                return 'screen';
+            case 'color dodge':
+                return 'color-dodge';
+            case 'multiply':
+                return 'multiply';
+            case 'linear dodge':
+                return 'lighter';
+            default:
+                return 'source-over';
+        }
     }
     cssColor(color, opacity = 1) {
         const alpha = Math.max(0, Math.min(1, Number(opacity !== null && opacity !== void 0 ? opacity : 1)));

@@ -66,7 +66,9 @@ let CCLabel = class CCLabel extends CCComponent_1.CCComponent {
             this._N$fontFamily = psdLayer.fontFamily;
         // this._actualFontSize = this._fontSize;
         this._string = this._N$string = psdLayer.text;
-        this._lineHeight = this._fontSize + config_1.config.textLineHeightOffset;
+        this._lineHeight = psdLayer.lineHeight || this._fontSize + config_1.config.textLineHeightOffset;
+        this._N$horizontalAlign = psdLayer.horizontalAlign;
+        this._horizontalAlign = psdLayer.horizontalAlign;
         if (config_1.config.editorVersion >= EditorVersion_1.EditorVersion.v342) {
             this._srcBlendFactor = 2;
             this._dstBlendFactor = 4;

@@ -113,7 +113,9 @@ export class PsdImage extends PsdLayer {
 
         if (innerGlow) {
             const radius = Math.max(1, Math.round(Number(innerGlow.size?.value) || 1));
-            this.paintMask(styledContext, this.innerEdge(sourceCanvas, radius), null, innerGlow.color, innerGlow.opacity);
+            const choke = Math.max(0, Number(innerGlow.choke?.value) || 0);
+            const glowMask = this.innerGlowMask(sourceCanvas, radius, choke);
+            this.paintMask(styledContext, glowMask, null, innerGlow.color, innerGlow.opacity, 90, innerGlow.blendMode);
         }
 
         this.source.canvas = styled;
@@ -135,36 +137,71 @@ export class PsdImage extends PsdLayer {
         return mask;
     }
 
-    private innerEdge(sourceCanvas: canvas.Canvas, radius: number) {
+    private innerGlowMask(sourceCanvas: canvas.Canvas, radius: number, choke: number) {
         const mask = canvas.createCanvas(sourceCanvas.width, sourceCanvas.height);
         const sourceContext = sourceCanvas.getContext('2d');
         const sourceData = sourceContext.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height);
         const edgeData = mask.getContext('2d').createImageData(sourceCanvas.width, sourceCanvas.height);
+        const paddedWidth = sourceCanvas.width + 2;
+        const paddedHeight = sourceCanvas.height + 2;
+        const maxDistance = radius + choke + 2;
+        const distances = new Float32Array(paddedWidth * paddedHeight);
+        distances.fill(maxDistance);
+
+        for (let y = 0; y < paddedHeight; y++) {
+            for (let x = 0; x < paddedWidth; x++) {
+                if (x === 0 || y === 0 || x === paddedWidth - 1 || y === paddedHeight - 1) {
+                    distances[y * paddedWidth + x] = 0;
+                    continue;
+                }
+                const sourceIndex = ((y - 1) * sourceCanvas.width + (x - 1)) * 4;
+                if (sourceData.data[sourceIndex + 3] === 0) distances[y * paddedWidth + x] = 0;
+            }
+        }
+
+        const diagonal = Math.SQRT2;
+        for (let y = 1; y < paddedHeight - 1; y++) {
+            for (let x = 1; x < paddedWidth - 1; x++) {
+                const index = y * paddedWidth + x;
+                if (distances[index] === 0) continue;
+                distances[index] = Math.min(
+                    distances[index],
+                    distances[index - 1] + 1,
+                    distances[index - paddedWidth] + 1,
+                    distances[index - paddedWidth - 1] + diagonal,
+                    distances[index - paddedWidth + 1] + diagonal
+                );
+            }
+        }
+        for (let y = paddedHeight - 2; y >= 1; y--) {
+            for (let x = paddedWidth - 2; x >= 1; x--) {
+                const index = y * paddedWidth + x;
+                if (distances[index] === 0) continue;
+                distances[index] = Math.min(
+                    distances[index],
+                    distances[index + 1] + 1,
+                    distances[index + paddedWidth] + 1,
+                    distances[index + paddedWidth + 1] + diagonal,
+                    distances[index + paddedWidth - 1] + diagonal
+                );
+            }
+        }
+
         for (let y = 0; y < sourceCanvas.height; y++) {
             for (let x = 0; x < sourceCanvas.width; x++) {
-                const index = (y * sourceCanvas.width + x) * 4;
-                if (sourceData.data[index + 3] === 0) continue;
-                let edge = false;
-                for (let offsetY = -radius; offsetY <= radius && !edge; offsetY++) {
-                    for (let offsetX = -radius; offsetX <= radius; offsetX++) {
-                        if (offsetX * offsetX + offsetY * offsetY > radius * radius) continue;
-                        const sampleX = x + offsetX;
-                        const sampleY = y + offsetY;
-                        if (sampleX < 0 || sampleY < 0 || sampleX >= sourceCanvas.width || sampleY >= sourceCanvas.height
-                            || sourceData.data[(sampleY * sourceCanvas.width + sampleX) * 4 + 3] === 0) {
-                            edge = true;
-                            break;
-                        }
-                    }
-                }
-                if (edge) edgeData.data[index + 3] = sourceData.data[index + 3];
+                const sourceIndex = (y * sourceCanvas.width + x) * 4;
+                const sourceAlpha = sourceData.data[sourceIndex + 3];
+                if (sourceAlpha === 0) continue;
+                const distance = distances[(y + 1) * paddedWidth + x + 1];
+                const fade = Math.max(0, Math.min(1, 1 - Math.max(0, distance - 1 - choke) / radius));
+                edgeData.data[sourceIndex + 3] = Math.round(sourceAlpha * fade);
             }
         }
         mask.getContext('2d').putImageData(edgeData, 0, 0);
         return mask;
     }
 
-    private paintMask(target: canvas.CanvasRenderingContext2D, mask: canvas.Canvas, gradient: any, color: any, opacity = 1, angle = 90) {
+    private paintMask(target: canvas.CanvasRenderingContext2D, mask: canvas.Canvas, gradient: any, color: any, opacity = 1, angle = 90, blendMode = 'normal') {
         const fill = canvas.createCanvas(mask.width, mask.height);
         const fillContext = fill.getContext('2d');
         fillContext.drawImage(mask, 0, 0);
@@ -190,7 +227,25 @@ export class PsdImage extends PsdLayer {
             return;
         }
         fillContext.fillRect(0, 0, mask.width, mask.height);
+        target.save();
+        target.globalCompositeOperation = this.canvasBlendMode(blendMode) as any;
         target.drawImage(fill, 0, 0);
+        target.restore();
+    }
+
+    private canvasBlendMode(blendMode: string) {
+        switch (String(blendMode || '').toLowerCase().replace(/[_-]+/g, ' ')) {
+            case 'screen':
+                return 'screen';
+            case 'color dodge':
+                return 'color-dodge';
+            case 'multiply':
+                return 'multiply';
+            case 'linear dodge':
+                return 'lighter';
+            default:
+                return 'source-over';
+        }
     }
 
     private cssColor(color: any, opacity = 1) {

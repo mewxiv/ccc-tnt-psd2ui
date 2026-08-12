@@ -9,8 +9,10 @@ export class PsdText extends PsdLayer {
     declare parent: PsdGroup;
     declare text: string;
     declare fontSize: number;
+    declare lineHeight: number;
     declare font: string;
     declare fontFamily: string;
+    declare horizontalAlign: number;
     declare outline: { width: number, color: Color }; // 描边
     declare offsetY: number;
 
@@ -29,11 +31,19 @@ export class PsdText extends PsdLayer {
         this.fontFamily = style?.font?.name || '';
 
         // 可能会对文本图层进行缩放，这里计算缩放之后的时机字体大小
-        if (Math.abs(1 - textSource.transform[0]) > 0.001) {
-            this.fontSize = Math.round(style.fontSize * textSource.transform[0] * 100) / 100;
+        const scaleX = Number(textSource.transform?.[0]) || 1;
+        const scaleY = Math.abs(Number(textSource.transform?.[3]) || scaleX);
+        if (Math.abs(1 - scaleX) > 0.001) {
+            this.fontSize = Math.round(style.fontSize * scaleX * 100) / 100;
         } else {
             this.fontSize = style.fontSize;
         }
+
+        const sourceLeading = Number(style?.leading);
+        this.lineHeight = this.text.includes("\n") && Number.isFinite(sourceLeading) && sourceLeading > 0
+            ? Math.round(sourceLeading * scaleY * 100) / 100
+            : this.fontSize + config.textLineHeightOffset;
+        this.horizontalAlign = this.parseHorizontalAlign(textSource.paragraphStyle?.justification);
 
 
         this.offsetY = config.textOffsetY[this.fontSize] || config.textOffsetY["default"] || 0;
@@ -41,6 +51,18 @@ export class PsdText extends PsdLayer {
         this.parseSolidFill();
         this.parseStroke();
         return true;
+    }
+
+    private parseHorizontalAlign(justification: string) {
+        switch (String(justification || '').toLowerCase()) {
+            case 'right':
+                return 2;
+            case 'center':
+                return 1;
+            case 'left':
+            default:
+                return 0;
+        }
     }
     onCtor() {
 

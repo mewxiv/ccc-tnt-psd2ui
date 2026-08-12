@@ -133,10 +133,30 @@ class Parser {
         return (value === null || value === void 0 ? void 0 : value.enabled) ? value : null;
     }
     applyHeuristics(root) {
+        this.applyClippingVisibility(root);
         this.applyMirrorCopyHeuristics(root);
         this.applyCompositeArtifactHeuristics(root);
         this.pruneIgnoredNodes(root);
         this.recomputeGroupRects(root);
+    }
+    /** A clipped layer is invisible when its Photoshop clipping base is hidden. */
+    applyClippingVisibility(group) {
+        let clippingBase = null;
+        group.children = group.children.filter((child) => {
+            var _a;
+            if (child instanceof PsdGroup_1.PsdGroup) {
+                this.applyClippingVisibility(child);
+            }
+            if ((_a = child.source) === null || _a === void 0 ? void 0 : _a.clipping) {
+                if (!clippingBase || clippingBase.hidden) {
+                    console.log(`Parser-> 忽略无可见基层的剪贴层 ${child.name}`);
+                    return false;
+                }
+                return true;
+            }
+            clippingBase = child;
+            return true;
+        });
     }
     applyMirrorCopyHeuristics(group) {
         let images = group.children.filter((child) => child instanceof PsdImage_1.PsdImage);

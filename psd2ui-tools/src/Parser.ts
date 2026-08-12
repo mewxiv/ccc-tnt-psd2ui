@@ -133,10 +133,32 @@ export class Parser {
     }
 
     private applyHeuristics(root: PsdDocument) {
+        this.applyClippingVisibility(root);
         this.applyMirrorCopyHeuristics(root);
         this.applyCompositeArtifactHeuristics(root);
         this.pruneIgnoredNodes(root);
         this.recomputeGroupRects(root);
+    }
+
+    /** A clipped layer is invisible when its Photoshop clipping base is hidden. */
+    private applyClippingVisibility(group: PsdGroup) {
+        let clippingBase: PsdLayer = null;
+        group.children = group.children.filter((child) => {
+            if (child instanceof PsdGroup) {
+                this.applyClippingVisibility(child);
+            }
+
+            if (child.source?.clipping) {
+                if (!clippingBase || clippingBase.hidden) {
+                    console.log(`Parser-> 忽略无可见基层的剪贴层 ${child.name}`);
+                    return false;
+                }
+                return true;
+            }
+
+            clippingBase = child;
+            return true;
+        });
     }
 
     private applyMirrorCopyHeuristics(group: PsdGroup) {

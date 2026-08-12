@@ -4,7 +4,9 @@ const assert = require('node:assert/strict');
 require('ag-psd/initialize-canvas');
 const canvas = require('canvas');
 const { PsdImage } = require('../dist/psd/PsdImage');
+const { PsdText } = require('../dist/psd/PsdText');
 const { Parser } = require('../dist/Parser');
+const { CCLabel } = require('../dist/engine/cc/CCLabel');
 
 function sourceWithEffects(effects, fillOpacity = 1) {
   const layerCanvas = canvas.createCanvas(4, 4);
@@ -61,4 +63,117 @@ test('only gradient text effects require rasterized text output', () => {
   assert.equal(parser.shouldRasterizeText({
     effects: { dropShadow: [{ enabled: true }] },
   }), false);
+});
+
+test('large inner glow fades toward the center instead of flattening a short button', () => {
+  const layerCanvas = canvas.createCanvas(143, 43);
+  layerCanvas.getContext('2d').fillRect(0, 0, 143, 43);
+  const image = new PsdImage({
+    ...sourceWithEffects({}),
+    right: 143,
+    bottom: 43,
+    canvas: layerCanvas,
+    effects: {
+      solidFill: [{
+        enabled: true,
+        color: { r: 96, g: 147, b: 82 },
+        opacity: 1,
+      }],
+      innerGlow: {
+        enabled: true,
+        blendMode: 'screen',
+        color: { r: 163, g: 255, b: 191 },
+        opacity: 0.75,
+        choke: { value: 0 },
+        size: { value: 21 },
+      },
+    },
+  }, null, null);
+
+  const context = image.source.canvas.getContext('2d');
+  const nearTop = context.getImageData(19, 2, 1, 1).data;
+  const middle = context.getImageData(19, 21, 1, 1).data;
+  const difference = Math.max(
+    Math.abs(nearTop[0] - middle[0]),
+    Math.abs(nearTop[1] - middle[1]),
+    Math.abs(nearTop[2] - middle[2])
+  );
+  assert.ok(difference >= 20, `expected a soft glow gradient, got difference=${difference}`);
+});
+
+test('clipped layer is removed when its Photoshop clipping base is hidden', () => {
+  const baseCanvas = canvas.createCanvas(40, 40);
+  baseCanvas.getContext('2d').fillRect(0, 0, 40, 40);
+  const clippedCanvas = canvas.createCanvas(40, 40);
+  const clippedContext = clippedCanvas.getContext('2d');
+  clippedContext.fillStyle = '#ff0000';
+  clippedContext.fillRect(0, 0, 40, 20);
+  clippedContext.fillStyle = '#0000ff';
+  clippedContext.fillRect(0, 20, 40, 20);
+
+  const parser = new Parser();
+  const document = parser.parseLayer({
+    name: 'document',
+    width: 100,
+    height: 100,
+    children: [{
+      name: 'group',
+      children: [{
+        name: 'hidden-base',
+        left: 10,
+        top: 10,
+        right: 50,
+        bottom: 50,
+        hidden: true,
+        opacity: 1,
+        canvas: baseCanvas,
+      }, {
+        name: 'clipped-overlay',
+        left: 10,
+        top: 10,
+        right: 50,
+        bottom: 50,
+        hidden: false,
+        opacity: 1,
+        clipping: true,
+        blendMode: 'multiply',
+        canvas: clippedCanvas,
+      }],
+    }],
+  });
+
+  assert.deepEqual(document.children[0].children.map((layer) => layer.source.name), ['hidden-base']);
+});
+
+test('multiline Photoshop leading and paragraph alignment are preserved in Cocos labels', () => {
+  const textCanvas = canvas.createCanvas(57, 158);
+  const source = {
+    name: 'three-lines',
+    left: 0,
+    top: 0,
+    right: 57,
+    bottom: 158,
+    hidden: false,
+    opacity: 1,
+    canvas: textCanvas,
+    text: {
+      text: '生命\n防御\n攻击',
+      transform: [1, 0, 0, 1, 0, 0],
+      style: {
+        font: { name: 'AlimamaDongFangDaKai-Regular' },
+        fontSize: 28,
+        leading: 65,
+      },
+      paragraphStyle: { justification: 'left' },
+    },
+  };
+  const root = { size: { width: 1920, height: 1080 }, anchorPoint: { x: 0.5, y: 0.5 } };
+  const layer = new PsdText(source, {}, root);
+  layer.parseSource();
+  const label = new CCLabel();
+  label.updateWithLayer(layer);
+
+  assert.equal(label._lineHeight, 65);
+  assert.equal(label['_N$horizontalAlign'], 0);
+  assert.equal(label._horizontalAlign, 0);
 });

@@ -102,8 +102,9 @@ export class CCLabel extends CCComponent{
         if (psdLayer.fontFamily) this._N$fontFamily = psdLayer.fontFamily;
         // this._actualFontSize = this._fontSize;
         this._string = this._N$string = psdLayer.text;
-        
-        this._lineHeight = this._fontSize + config.textLineHeightOffset;
+        this._lineHeight = psdLayer.lineHeight || this._fontSize + config.textLineHeightOffset;
+        this._N$horizontalAlign = psdLayer.horizontalAlign;
+        this._horizontalAlign = psdLayer.horizontalAlign;
         
         if(config.editorVersion >= EditorVersion.v342){
             this._srcBlendFactor = 2;
