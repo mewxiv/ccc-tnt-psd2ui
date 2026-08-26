@@ -1,3 +1,7 @@
+## 引擎版本
+
+命令行使用 `--engine-version v249|v342|v381` 选择 Cocos Creator 2.4.x、3.4.x 或 3.8.x 的 Prefab/Meta 输出格式。`v381` 以 Creator 3.8.1 原生资源格式为基准。
+
 ## 属性
 
 <a href="#Btn"> @Btn | @btn 按钮</a>

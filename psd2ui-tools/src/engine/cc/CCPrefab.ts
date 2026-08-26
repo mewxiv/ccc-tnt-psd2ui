@@ -20,7 +20,7 @@ export class CCPrefab extends CCObject{
     readonly: boolean = false;
     
     // // 3.4.x
-    @ccversion(EditorVersion.v342)
+    @ccversion(EditorVersion.v342, EditorVersion.v381)
     persistent: boolean = false;
 
 }

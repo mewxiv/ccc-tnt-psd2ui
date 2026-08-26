@@ -74,7 +74,7 @@ function assign(target,... sources){
     }
 }
 
-export function ccversion(version: number){
+export function ccversion(...versions: number[]){
    
     return (target: any,propertyKey: string)=>{
         let _class_name_ = target.constructor.name;
@@ -88,12 +88,14 @@ export function ccversion(version: number){
             _class_obj[propertyKey] = {};
         }
         
-        if(EditorVersion.all === version){
-            for (const key in EditorVersion) {    
+        if(versions.includes(EditorVersion.all)){
+            for (const key in EditorVersion) {
                 _class_obj[propertyKey][EditorVersion[key]] = true;
             }
         }else{
-            _class_obj[propertyKey][EditorVersion[version]] = true;
+            for (const version of versions) {
+                _class_obj[propertyKey][EditorVersion[version]] = true;
+            }
         }
 
         var base = getSuper(target.constructor);

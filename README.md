@@ -8,7 +8,7 @@
 
 插件文件夹提供了一个能够正确导出为预制体的的 psd 文件可以作为参考  `test\demo.psd` 
 
-支持的 CocosCreator 版本：`2.4.x`、 `3.4.+` ，截止到目前可以支持到 `3.7.x`  
+支持的 CocosCreator 版本：`2.4.x`、`3.4.x`、`3.8.x`。命令行工具使用 `--engine-version v249|v342|v381` 选择输出 Profile。
 如果无法拖放 psd 文件或文件夹，可能是 CocosCreator 的权限不够，尝试使用管理员方式打开 CocosCreator 或者使用 打开文件 功能
 
 

@@ -15,7 +15,7 @@ export abstract class CCComponent extends CCObject{
     _id: string = "";
  
     // 3.4.x
-    @ccversion(EditorVersion.v342)
+    @ccversion(EditorVersion.v342, EditorVersion.v381)
     __prefab: CCIDObject = null;
 
     abstract updateWithLayer(psdLayer: PsdLayer);

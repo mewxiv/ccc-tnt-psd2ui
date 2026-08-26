@@ -18,17 +18,21 @@ let CCUITransform = class CCUITransform extends CCComponent_1.CCComponent {
         super(...arguments);
         this._contentSize = new CCSize_1.CCSize();
         this._anchorPoint = new CCVec2_1.CCVec2(0, 0);
+        this._priority = 0;
     }
     updateWithLayer(psdLayer) {
     }
 };
-exports.CCUITransform = CCUITransform;
 __decorate([
-    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342)
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342, EditorVersion_1.EditorVersion.v381)
 ], CCUITransform.prototype, "_contentSize", void 0);
 __decorate([
-    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342)
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342, EditorVersion_1.EditorVersion.v381)
 ], CCUITransform.prototype, "_anchorPoint", void 0);
-exports.CCUITransform = CCUITransform = __decorate([
+__decorate([
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v381)
+], CCUITransform.prototype, "_priority", void 0);
+CCUITransform = __decorate([
     (0, _decorator_1.cctype)("cc.UITransform")
 ], CCUITransform);
+exports.CCUITransform = CCUITransform;

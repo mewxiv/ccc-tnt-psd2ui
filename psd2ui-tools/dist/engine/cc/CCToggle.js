@@ -25,6 +25,7 @@ let CCToggle = class CCToggle extends CCButton_1.CCButton {
         this._isChecked = true;
         // 3.4.x
         this._checkMark = null;
+        this._toggleGroup = null;
     }
     setCheckMark(sprite) {
         this._checkMark = this.checkMark = {
@@ -51,7 +52,6 @@ let CCToggle = class CCToggle extends CCButton_1.CCButton {
         }
     }
 };
-exports.CCToggle = CCToggle;
 __decorate([
     (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v249)
 ], CCToggle.prototype, "_N$isChecked", void 0);
@@ -65,11 +65,15 @@ __decorate([
     (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.all)
 ], CCToggle.prototype, "checkEvents", void 0);
 __decorate([
-    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342)
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342, EditorVersion_1.EditorVersion.v381)
 ], CCToggle.prototype, "_isChecked", void 0);
 __decorate([
-    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342)
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342, EditorVersion_1.EditorVersion.v381)
 ], CCToggle.prototype, "_checkMark", void 0);
-exports.CCToggle = CCToggle = __decorate([
+__decorate([
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v381)
+], CCToggle.prototype, "_toggleGroup", void 0);
+CCToggle = __decorate([
     (0, _decorator_1.cctype)("cc.Toggle")
 ], CCToggle);
+exports.CCToggle = CCToggle;

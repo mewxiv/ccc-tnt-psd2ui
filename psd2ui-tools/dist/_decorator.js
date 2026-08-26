@@ -1,8 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.nonserialization = void 0;
-exports.cctype = cctype;
-exports.ccversion = ccversion;
+exports.ccversion = exports.cctype = exports.nonserialization = void 0;
 const EditorVersion_1 = require("./EditorVersion");
 /** 禁止序列化 */
 let nonserialization = (target, propertyKey) => {
@@ -41,6 +39,7 @@ function cctype(type) {
         });
     };
 }
+exports.cctype = cctype;
 let _extends = {};
 let _class_attrs = {};
 let _target_map_ = {};
@@ -69,7 +68,7 @@ function assign(target, ...sources) {
         _assign(target, sources[i]);
     }
 }
-function ccversion(version) {
+function ccversion(...versions) {
     return (target, propertyKey) => {
         let _class_name_ = target.constructor.name;
         _class_name_ = checkTag(target);
@@ -78,13 +77,15 @@ function ccversion(version) {
         if (!_class_obj[propertyKey]) {
             _class_obj[propertyKey] = {};
         }
-        if (EditorVersion_1.EditorVersion.all === version) {
+        if (versions.includes(EditorVersion_1.EditorVersion.all)) {
             for (const key in EditorVersion_1.EditorVersion) {
                 _class_obj[propertyKey][EditorVersion_1.EditorVersion[key]] = true;
             }
         }
         else {
-            _class_obj[propertyKey][EditorVersion_1.EditorVersion[version]] = true;
+            for (const version of versions) {
+                _class_obj[propertyKey][EditorVersion_1.EditorVersion[version]] = true;
+            }
         }
         var base = getSuper(target.constructor);
         // (base === Object || base === UIObject) && (base = null);
@@ -116,6 +117,7 @@ function ccversion(version) {
         target._version[_class_name_] = _class_attrs[_class_name_] = _class_obj;
     };
 }
+exports.ccversion = ccversion;
 function getSuper(ctor) {
     var proto = ctor.prototype; // binded function do not have prototype
     var dunderProto = proto && Object.getPrototypeOf(proto);

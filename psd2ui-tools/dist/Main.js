@@ -63,7 +63,9 @@ const ExportImageMgr_1 = require("./ExportImageMgr");
 const CCUIOpacity_1 = require("./engine/cc/CCUIOpacity");
 const CCUITransform_1 = require("./engine/cc/CCUITransform");
 const CCVec3_1 = require("./engine/cc/values/CCVec3");
+const CCQuat_1 = require("./engine/cc/values/CCQuat");
 const Vec3_1 = require("./values/Vec3");
+const EngineVersionProfile_1 = require("./EngineVersionProfile");
 /***
  * 执行流程
  * - 首次运行，先读取项目文件夹下所有图片资源，进行 md5 缓存
@@ -137,7 +139,11 @@ class Main {
             });
             // 设置引擎版本
             if (args["engine-version"]) {
-                config_1.config.editorVersion = EditorVersion_1.EditorVersion[args["engine-version"]];
+                const editorVersion = (0, EngineVersionProfile_1.resolveEditorVersion)(args["engine-version"]);
+                if (editorVersion === null) {
+                    throw new Error(`暂未实现该引擎版本 ${args["engine-version"]}。支持: ${EngineVersionProfile_1.SUPPORTED_ENGINE_VERSION_NAMES.join(', ')}`);
+                }
+                config_1.config.editorVersion = editorVersion;
             }
             console.log(`Main-> 数据版本 ${EditorVersion_1.EditorVersion[config_1.config.editorVersion]}`);
             if (args.init && (!args["project-assets"] || !args.cache)) {
@@ -204,10 +210,11 @@ class Main {
             return false;
         }
         if (args["engine-version"]) {
-            let editorVersion = EditorVersion_1.EditorVersion[args["engine-version"]];
+            let editorVersion = (0, EngineVersionProfile_1.resolveEditorVersion)(args["engine-version"]);
             switch (editorVersion) {
                 case EditorVersion_1.EditorVersion.v249:
                 case EditorVersion_1.EditorVersion.v342:
+                case EditorVersion_1.EditorVersion.v381:
                     break;
                 default:
                     console.log(`暂未实现该引擎版本 ${args["engine-version"]}`);
@@ -304,7 +311,9 @@ class Main {
         if (config_1.config.editorVersion >= EditorVersion_1.EditorVersion.v342) {
             // 3.4.x
             node._lpos = new CCVec3_1.CCVec3(layer.position.x, layer.position.y + offsetY, 0);
-            node._lrot = new CCVec3_1.CCVec3(0, 0, 0);
+            node._lrot = config_1.config.editorVersion === EditorVersion_1.EditorVersion.v381
+                ? new CCQuat_1.CCQuat(0, 0, 0, 1)
+                : new CCVec3_1.CCVec3(0, 0, 0);
             node._lscale = new CCVec3_1.CCVec3(layer.scale.x, layer.scale.y, layer.scale.z);
             node._euler = new CCVec3_1.CCVec3();
             // 3.4.x
@@ -431,6 +440,8 @@ class Main {
         meta = meta.replace(/\$FILE_NAME/g, _layer.imgName);
         meta = meta.replace(/\$WIDTH/g, _layer.textureSize.width);
         meta = meta.replace(/\$HEIGHT/g, _layer.textureSize.height);
+        meta = meta.replace(/\$HALF_WIDTH/g, (_layer.textureSize.width / 2));
+        meta = meta.replace(/\$HALF_HEIGHT/g, (_layer.textureSize.height / 2));
         let s9 = _layer.s9 || {
             b: 0, t: 0, l: 0, r: 0,
         };
@@ -447,6 +458,8 @@ class Main {
     }
     savePrefabMeta(psdDoc, fullpath) {
         let meta = this.prefabMetaContent.replace(/\$PREFB_UUID/g, psdDoc.uuid);
+        const escapedNodeName = JSON.stringify(psdDoc.name).slice(1, -1);
+        meta = meta.replace(/\$NODE_NAME/g, escapedNodeName);
         fs_extra_1.default.writeFileSync(fullpath + `.meta`, meta);
     }
     applyConfig(comp) {

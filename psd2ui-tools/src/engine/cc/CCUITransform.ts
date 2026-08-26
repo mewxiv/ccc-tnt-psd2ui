@@ -11,11 +11,14 @@ import { CCVec2 } from "./values/CCVec2";
 @cctype("cc.UITransform")
 export class CCUITransform extends CCComponent{
     
-    @ccversion(EditorVersion.v342)
+    @ccversion(EditorVersion.v342, EditorVersion.v381)
     _contentSize: CCSize = new CCSize();
     
-    @ccversion(EditorVersion.v342)
+    @ccversion(EditorVersion.v342, EditorVersion.v381)
     _anchorPoint: CCVec2 = new CCVec2(0,0);
+
+    @ccversion(EditorVersion.v381)
+    _priority: number = 0;
     
     updateWithLayer(psdLayer: PsdLayer) {
     }

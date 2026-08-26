@@ -20,7 +20,6 @@ class CCComponent extends CCObject_1.CCObject {
         this.__prefab = null;
     }
 }
-exports.CCComponent = CCComponent;
 __decorate([
     (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.all)
 ], CCComponent.prototype, "_enabled", void 0);
@@ -31,5 +30,6 @@ __decorate([
     (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.all)
 ], CCComponent.prototype, "_id", void 0);
 __decorate([
-    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342)
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342, EditorVersion_1.EditorVersion.v381)
 ], CCComponent.prototype, "__prefab", void 0);
+exports.CCComponent = CCComponent;

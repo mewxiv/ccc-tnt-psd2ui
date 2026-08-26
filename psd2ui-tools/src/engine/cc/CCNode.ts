@@ -10,6 +10,7 @@ import { CCSize } from "./values/CCSize";
 import { CCTypedArray } from "./values/CCTypedArray";
 import { CCVec2 } from "./values/CCVec2";
 import { CCVec3 } from "./values/CCVec3";
+import { CCQuat } from "./values/CCQuat";
 
 @cctype("cc.Node")
 export class CCNode extends CCObject{
@@ -86,21 +87,21 @@ export class CCNode extends CCObject{
     _bfsRenderFlag: boolean = false;
 
     // 3.4.x
-    @ccversion(EditorVersion.v342)
+    @ccversion(EditorVersion.v342, EditorVersion.v381)
     _lpos: CCVec3 = new CCVec3();
 
-    // 3.4.x
-    @ccversion(EditorVersion.v342)
-    _lrot: CCVec3 = new CCVec3();
+    // Creator 3.x. 3.8 serializes this as cc.Quat; Main assigns the profile-specific value.
+    @ccversion(EditorVersion.v342, EditorVersion.v381)
+    _lrot: CCVec3 | CCQuat = new CCVec3();
     
     // 3.4.x
-    @ccversion(EditorVersion.v342)
+    @ccversion(EditorVersion.v342, EditorVersion.v381)
     _lscale: CCVec3 = new CCVec3();
     // 3.4.x
-    @ccversion(EditorVersion.v342)
+    @ccversion(EditorVersion.v342, EditorVersion.v381)
     _euler: CCVec3 = new CCVec3();
     // 3.4.x
-    @ccversion(EditorVersion.v342)
+    @ccversion(EditorVersion.v342, EditorVersion.v381)
     _layer: number = 33554432;
 
 

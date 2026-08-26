@@ -19,10 +19,10 @@ let CCUIOpacity = class CCUIOpacity extends CCComponent_1.CCComponent {
     updateWithLayer(psdLayer) {
     }
 };
-exports.CCUIOpacity = CCUIOpacity;
 __decorate([
-    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342)
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342, EditorVersion_1.EditorVersion.v381)
 ], CCUIOpacity.prototype, "_opacity", void 0);
-exports.CCUIOpacity = CCUIOpacity = __decorate([
+CCUIOpacity = __decorate([
     (0, _decorator_1.cctype)("cc.UIOpacity")
 ], CCUIOpacity);
+exports.CCUIOpacity = CCUIOpacity;

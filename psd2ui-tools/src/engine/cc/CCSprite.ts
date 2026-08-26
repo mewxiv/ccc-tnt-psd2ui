@@ -56,12 +56,16 @@ export class CCSprite extends CCComponent {
     @ccversion(EditorVersion.v342)
     _customMaterial: any = null;
 
-    // 3.4.x
-    @ccversion(EditorVersion.v342)
+    // Creator 3.8 current serializer field.
+    @ccversion(EditorVersion.v381)
+    _sharedMaterial: any = null;
+
+    // Creator 3.x
+    @ccversion(EditorVersion.v342, EditorVersion.v381)
     _color: CCColor = new CCColor(255,255,255,255);
 
-    // 3.4.x
-    @ccversion(EditorVersion.v342)
+    // Creator 3.x
+    @ccversion(EditorVersion.v342, EditorVersion.v381)
     _useGrayscale: boolean = false;
 
     use9() {
@@ -84,7 +88,9 @@ export class CCSprite extends CCComponent {
     }
 
     setSpriteFrame(uuid: string){
-        if(config.editorVersion >= EditorVersion.v342){
+        if(config.editorVersion === EditorVersion.v381){
+            this._spriteFrame = {__uuid__: `${uuid}@f9941`};
+        }else if(config.editorVersion >= EditorVersion.v342){
             this._spriteFrame = {__uuid__: `${uuid}@f9941`,__expectedType__ : "cc.SpriteFrame"};
         }else{
             this._spriteFrame = {__uuid__: uuid};

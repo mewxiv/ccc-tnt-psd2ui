@@ -20,7 +20,7 @@ export class CCPrefabInfo extends UIObject{
     @ccversion(EditorVersion.all)
     fileId: string = "";
 
-    @ccversion(EditorVersion.all)
+    @ccversion(EditorVersion.v249, EditorVersion.v342)
     sync: boolean = false;
 
     constructor(){

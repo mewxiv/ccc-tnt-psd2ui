@@ -33,9 +33,11 @@ let CCSprite = class CCSprite extends CCComponent_1.CCComponent {
         this._visFlags = 0;
         // 3.4.x
         this._customMaterial = null;
-        // 3.4.x
+        // Creator 3.8 current serializer field.
+        this._sharedMaterial = null;
+        // Creator 3.x
         this._color = new CCColor_1.CCColor(255, 255, 255, 255);
-        // 3.4.x
+        // Creator 3.x
         this._useGrayscale = false;
     }
     use9() {
@@ -55,7 +57,10 @@ let CCSprite = class CCSprite extends CCComponent_1.CCComponent {
         }
     }
     setSpriteFrame(uuid) {
-        if (config_1.config.editorVersion >= EditorVersion_1.EditorVersion.v342) {
+        if (config_1.config.editorVersion === EditorVersion_1.EditorVersion.v381) {
+            this._spriteFrame = { __uuid__: `${uuid}@f9941` };
+        }
+        else if (config_1.config.editorVersion >= EditorVersion_1.EditorVersion.v342) {
             this._spriteFrame = { __uuid__: `${uuid}@f9941`, __expectedType__: "cc.SpriteFrame" };
         }
         else {
@@ -63,7 +68,6 @@ let CCSprite = class CCSprite extends CCComponent_1.CCComponent {
         }
     }
 };
-exports.CCSprite = CCSprite;
 __decorate([
     (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v249)
 ], CCSprite.prototype, "_materials", void 0);
@@ -107,11 +111,15 @@ __decorate([
     (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342)
 ], CCSprite.prototype, "_customMaterial", void 0);
 __decorate([
-    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342)
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v381)
+], CCSprite.prototype, "_sharedMaterial", void 0);
+__decorate([
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342, EditorVersion_1.EditorVersion.v381)
 ], CCSprite.prototype, "_color", void 0);
 __decorate([
-    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342)
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342, EditorVersion_1.EditorVersion.v381)
 ], CCSprite.prototype, "_useGrayscale", void 0);
-exports.CCSprite = CCSprite = __decorate([
+CCSprite = __decorate([
     (0, _decorator_1.cctype)("cc.Sprite")
 ], CCSprite);
+exports.CCSprite = CCSprite;

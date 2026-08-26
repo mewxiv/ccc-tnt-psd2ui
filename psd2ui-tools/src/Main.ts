@@ -31,7 +31,9 @@ import { exportImageMgr } from './ExportImageMgr';
 import { CCUIOpacity } from './engine/cc/CCUIOpacity';
 import { CCUITransform } from './engine/cc/CCUITransform';
 import { CCVec3 } from './engine/cc/values/CCVec3';
+import { CCQuat } from './engine/cc/values/CCQuat';
 import { Vec3 } from './values/Vec3';
+import { resolveEditorVersion, SUPPORTED_ENGINE_VERSION_NAMES } from './EngineVersionProfile';
 
 
 /***
@@ -112,7 +114,11 @@ export class Main {
         }
         // 设置引擎版本
         if (args["engine-version"]) {
-            config.editorVersion = EditorVersion[args["engine-version"] as string];
+            const editorVersion = resolveEditorVersion(args["engine-version"]);
+            if (editorVersion === null) {
+                throw new Error(`暂未实现该引擎版本 ${args["engine-version"]}。支持: ${SUPPORTED_ENGINE_VERSION_NAMES.join(', ')}`);
+            }
+            config.editorVersion = editorVersion;
         }
 
         console.log(`Main-> 数据版本 ${EditorVersion[config.editorVersion]}`);
@@ -194,10 +200,11 @@ export class Main {
         }
 
         if (args["engine-version"]) {
-            let editorVersion = EditorVersion[args["engine-version"] as string];
+            let editorVersion = resolveEditorVersion(args["engine-version"]);
             switch (editorVersion) {
                 case EditorVersion.v249:
                 case EditorVersion.v342:
+                case EditorVersion.v381:
                     break;
                 default:
                     console.log(`暂未实现该引擎版本 ${args["engine-version"]}`);
@@ -309,7 +316,9 @@ export class Main {
         if (config.editorVersion >= EditorVersion.v342) {
             // 3.4.x
             node._lpos = new CCVec3(layer.position.x, layer.position.y + offsetY, 0);
-            node._lrot = new CCVec3(0, 0, 0);
+            node._lrot = config.editorVersion === EditorVersion.v381
+                ? new CCQuat(0, 0, 0, 1)
+                : new CCVec3(0, 0, 0);
             node._lscale = new CCVec3(layer.scale.x, layer.scale.y, layer.scale.z);
             node._euler = new CCVec3();
 
@@ -455,6 +464,8 @@ export class Main {
         meta = meta.replace(/\$FILE_NAME/g, _layer.imgName);
         meta = meta.replace(/\$WIDTH/g, _layer.textureSize.width as any);
         meta = meta.replace(/\$HEIGHT/g, _layer.textureSize.height as any);
+        meta = meta.replace(/\$HALF_WIDTH/g, (_layer.textureSize.width / 2) as any);
+        meta = meta.replace(/\$HALF_HEIGHT/g, (_layer.textureSize.height / 2) as any);
 
         let s9 = _layer.s9 || {
             b: 0, t: 0, l: 0, r: 0,
@@ -477,6 +488,8 @@ export class Main {
 
     savePrefabMeta(psdDoc: PsdDocument, fullpath) {
         let meta = this.prefabMetaContent.replace(/\$PREFB_UUID/g, psdDoc.uuid)
+        const escapedNodeName = JSON.stringify(psdDoc.name).slice(1, -1);
+        meta = meta.replace(/\$NODE_NAME/g, escapedNodeName);
         fs.writeFileSync(fullpath + `.meta`, meta);
     }
 

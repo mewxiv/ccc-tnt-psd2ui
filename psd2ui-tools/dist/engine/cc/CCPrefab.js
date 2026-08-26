@@ -23,7 +23,6 @@ let CCPrefab = class CCPrefab extends CCObject_1.CCObject {
         this.persistent = false;
     }
 };
-exports.CCPrefab = CCPrefab;
 __decorate([
     (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.all)
 ], CCPrefab.prototype, "_native", void 0);
@@ -40,8 +39,9 @@ __decorate([
     (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v249)
 ], CCPrefab.prototype, "readonly", void 0);
 __decorate([
-    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342)
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342, EditorVersion_1.EditorVersion.v381)
 ], CCPrefab.prototype, "persistent", void 0);
-exports.CCPrefab = CCPrefab = __decorate([
+CCPrefab = __decorate([
     (0, _decorator_1.cctype)("cc.Prefab")
 ], CCPrefab);
+exports.CCPrefab = CCPrefab;

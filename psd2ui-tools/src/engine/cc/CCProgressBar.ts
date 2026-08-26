@@ -32,23 +32,23 @@ export class CCProgressBar extends CCComponent{
     _N$reverse: boolean = false;
 
     // 3.4.x
-    @ccversion(EditorVersion.v342)
+    @ccversion(EditorVersion.v342, EditorVersion.v381)
     _barSprite: CCIDObject = null;
     
     // 3.4.x
-    @ccversion(EditorVersion.v342)
+    @ccversion(EditorVersion.v342, EditorVersion.v381)
     _mode = 0;
     
     // 3.4.x
-    @ccversion(EditorVersion.v342)
+    @ccversion(EditorVersion.v342, EditorVersion.v381)
     _totalLength = 0;
     
     // 3.4.x
-    @ccversion(EditorVersion.v342)
+    @ccversion(EditorVersion.v342, EditorVersion.v381)
     _progress = 1;
 
     // 3.4.x
-    @ccversion(EditorVersion.v342)
+    @ccversion(EditorVersion.v342, EditorVersion.v381)
     _reverse = false;
 
 

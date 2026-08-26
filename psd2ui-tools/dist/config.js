@@ -13,7 +13,7 @@ class Config {
 --force-img      |   强制导出图片                即使在有缓存的情况下也要导出
 --input          |   输入目录或者 psd 文件       非 init 时 必选 [dir or psd] 
 --output         |   输出目录                   可选 缺省时为 --input [dir] 
---engine-version |   引擎版本                   可选           [v249 | v342] 
+--engine-version |   引擎版本                   可选           [v249 | v342 | v381]
 --project-assets |   指定项目文件夹              可选            [dir] 
 --cache-remake   |   重新创建缓存文件            可选
 --cache          |   缓存文件全路径              可选            [file-full-path] 
@@ -26,10 +26,12 @@ class Config {
         this.DEFAULT_SPRITE_FRAME_MATERIAL = {
             [EditorVersion_1.EditorVersion.v249]: "eca5d2f2-8ef6-41c2-bbe6-f9c79d09c432",
             [EditorVersion_1.EditorVersion.v342]: "",
+            [EditorVersion_1.EditorVersion.v381]: "",
         };
         this.DEFAULT_LABEL_MATERIAL = {
             [EditorVersion_1.EditorVersion.v249]: "eca5d2f2-8ef6-41c2-bbe6-f9c79d09c432",
             [EditorVersion_1.EditorVersion.v342]: "",
+            [EditorVersion_1.EditorVersion.v381]: "",
         };
         this.CompMappings = {
             "Btn": CCButton_1.CCButton,

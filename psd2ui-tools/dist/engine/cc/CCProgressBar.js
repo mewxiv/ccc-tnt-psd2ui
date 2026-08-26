@@ -62,7 +62,6 @@ let CCProgressBar = class CCProgressBar extends CCComponent_1.CCComponent {
         }
     }
 };
-exports.CCProgressBar = CCProgressBar;
 __decorate([
     (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v249)
 ], CCProgressBar.prototype, "_N$totalLength", void 0);
@@ -79,20 +78,21 @@ __decorate([
     (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v249)
 ], CCProgressBar.prototype, "_N$reverse", void 0);
 __decorate([
-    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342)
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342, EditorVersion_1.EditorVersion.v381)
 ], CCProgressBar.prototype, "_barSprite", void 0);
 __decorate([
-    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342)
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342, EditorVersion_1.EditorVersion.v381)
 ], CCProgressBar.prototype, "_mode", void 0);
 __decorate([
-    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342)
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342, EditorVersion_1.EditorVersion.v381)
 ], CCProgressBar.prototype, "_totalLength", void 0);
 __decorate([
-    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342)
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342, EditorVersion_1.EditorVersion.v381)
 ], CCProgressBar.prototype, "_progress", void 0);
 __decorate([
-    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342)
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342, EditorVersion_1.EditorVersion.v381)
 ], CCProgressBar.prototype, "_reverse", void 0);
-exports.CCProgressBar = CCProgressBar = __decorate([
+CCProgressBar = __decorate([
     (0, _decorator_1.cctype)("cc.ProgressBar")
 ], CCProgressBar);
+exports.CCProgressBar = CCProgressBar;

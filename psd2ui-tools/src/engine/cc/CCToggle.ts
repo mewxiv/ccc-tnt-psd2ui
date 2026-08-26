@@ -24,11 +24,14 @@ export class CCToggle extends CCButton{
     checkEvents = [];
 
     // 3.4.x
-    @ccversion(EditorVersion.v342)
+    @ccversion(EditorVersion.v342, EditorVersion.v381)
     _isChecked = true;
     // 3.4.x
-    @ccversion(EditorVersion.v342)
+    @ccversion(EditorVersion.v342, EditorVersion.v381)
     _checkMark: CCIDObject = null;
+
+    @ccversion(EditorVersion.v381)
+    _toggleGroup: CCIDObject = null;
 
     setCheckMark(sprite: CCSprite){
        this._checkMark = this.checkMark = {

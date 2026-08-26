@@ -10,6 +10,7 @@ exports.CCButton = void 0;
 const EditorVersion_1 = require("../../EditorVersion");
 const _decorator_1 = require("../../_decorator");
 const CCComponent_1 = require("./CCComponent");
+const CCColor_1 = require("./values/CCColor");
 let CCButton = class CCButton extends CCComponent_1.CCComponent {
     constructor() {
         super(...arguments);
@@ -38,11 +39,19 @@ let CCButton = class CCButton extends CCComponent_1.CCComponent {
         this._zoomScale = 1.2;
         // 3.4.x
         this._target = null;
+        this._normalColor = new CCColor_1.CCColor(214, 214, 214, 255);
+        this._hoverColor = new CCColor_1.CCColor(211, 211, 211, 255);
+        this._pressedColor = new CCColor_1.CCColor(255, 255, 255, 255);
+        this._disabledColor = new CCColor_1.CCColor(124, 124, 124, 255);
+        this._normalSprite = null;
+        this._hoverSprite = null;
+        this._pressedSprite = null;
+        this._disabledSprite = null;
     }
     updateWithLayer(psdLayer) {
+        this._target = this._N$target = this.node;
     }
 };
-exports.CCButton = CCButton;
 __decorate([
     (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v249)
 ], CCButton.prototype, "duration", void 0);
@@ -68,20 +77,45 @@ __decorate([
     (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v249)
 ], CCButton.prototype, "_N$target", void 0);
 __decorate([
-    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342)
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342, EditorVersion_1.EditorVersion.v381)
 ], CCButton.prototype, "_interactable", void 0);
 __decorate([
-    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342)
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342, EditorVersion_1.EditorVersion.v381)
 ], CCButton.prototype, "_transition", void 0);
 __decorate([
-    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342)
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342, EditorVersion_1.EditorVersion.v381)
 ], CCButton.prototype, "_duration", void 0);
 __decorate([
-    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342)
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342, EditorVersion_1.EditorVersion.v381)
 ], CCButton.prototype, "_zoomScale", void 0);
 __decorate([
-    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342)
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342, EditorVersion_1.EditorVersion.v381)
 ], CCButton.prototype, "_target", void 0);
-exports.CCButton = CCButton = __decorate([
+__decorate([
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v381)
+], CCButton.prototype, "_normalColor", void 0);
+__decorate([
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v381)
+], CCButton.prototype, "_hoverColor", void 0);
+__decorate([
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v381)
+], CCButton.prototype, "_pressedColor", void 0);
+__decorate([
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v381)
+], CCButton.prototype, "_disabledColor", void 0);
+__decorate([
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v381)
+], CCButton.prototype, "_normalSprite", void 0);
+__decorate([
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v381)
+], CCButton.prototype, "_hoverSprite", void 0);
+__decorate([
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v381)
+], CCButton.prototype, "_pressedSprite", void 0);
+__decorate([
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v381)
+], CCButton.prototype, "_disabledSprite", void 0);
+CCButton = __decorate([
     (0, _decorator_1.cctype)("cc.Button")
 ], CCButton);
+exports.CCButton = CCButton;

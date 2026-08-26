@@ -7,7 +7,7 @@ import { CCComponent } from "./CCComponent";
 @cctype("cc.UIOpacity")
 export class CCUIOpacity extends CCComponent{
     
-    @ccversion(EditorVersion.v342)
+    @ccversion(EditorVersion.v342, EditorVersion.v381)
     _opacity = 255;
     
     updateWithLayer(psdLayer: PsdLayer) {

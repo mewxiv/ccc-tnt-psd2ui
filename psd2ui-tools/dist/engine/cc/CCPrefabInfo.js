@@ -23,7 +23,6 @@ class CCPrefabInfo extends UIObject_1.UIObject {
         this.fileId = Utils_1.utils.compressUuid(this.uuid);
     }
 }
-exports.CCPrefabInfo = CCPrefabInfo;
 __decorate([
     (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.all)
 ], CCPrefabInfo.prototype, "__type__", void 0);
@@ -37,5 +36,6 @@ __decorate([
     (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.all)
 ], CCPrefabInfo.prototype, "fileId", void 0);
 __decorate([
-    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.all)
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v249, EditorVersion_1.EditorVersion.v342)
 ], CCPrefabInfo.prototype, "sync", void 0);
+exports.CCPrefabInfo = CCPrefabInfo;

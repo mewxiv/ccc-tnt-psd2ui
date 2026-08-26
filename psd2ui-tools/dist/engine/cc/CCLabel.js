@@ -47,9 +47,11 @@ let CCLabel = class CCLabel extends CCComponent_1.CCComponent {
         this._visFlags = 0;
         // 3.4.x
         this._customMaterial = null;
-        // 3.4.x
+        this._sharedMaterial = null;
+        this._useOriginalSize = true;
+        // Creator 3.x
         this._color = new CCColor_1.CCColor(255, 255, 255, 255);
-        // 3.4.x
+        // Creator 3.x
         this._overflow = 0;
         // // 3.4.x
         this._cacheMode = 0;
@@ -59,14 +61,19 @@ let CCLabel = class CCLabel extends CCComponent_1.CCComponent {
         this._isItalic = false;
         this._isBold = false;
         this._isUnderline = false;
+        this._fontFamily = "Arial";
+        this._font = null;
     }
     updateWithLayer(psdLayer) {
         this._fontSize = psdLayer.fontSize;
         if (psdLayer.fontFamily)
             this._N$fontFamily = psdLayer.fontFamily;
+        if (psdLayer.fontFamily)
+            this._fontFamily = psdLayer.fontFamily;
         // this._actualFontSize = this._fontSize;
         this._string = this._N$string = psdLayer.text;
         this._lineHeight = psdLayer.lineHeight || this._fontSize + config_1.config.textLineHeightOffset;
+        this._actualFontSize = this._fontSize;
         this._N$horizontalAlign = psdLayer.horizontalAlign;
         this._horizontalAlign = psdLayer.horizontalAlign;
         if (config_1.config.editorVersion >= EditorVersion_1.EditorVersion.v342) {
@@ -75,7 +82,6 @@ let CCLabel = class CCLabel extends CCComponent_1.CCComponent {
         }
     }
 };
-exports.CCLabel = CCLabel;
 __decorate([
     (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.all)
 ], CCLabel.prototype, "_srcBlendFactor", void 0);
@@ -140,32 +146,45 @@ __decorate([
     (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342)
 ], CCLabel.prototype, "_customMaterial", void 0);
 __decorate([
-    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342)
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v381)
+], CCLabel.prototype, "_sharedMaterial", void 0);
+__decorate([
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v381)
+], CCLabel.prototype, "_useOriginalSize", void 0);
+__decorate([
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342, EditorVersion_1.EditorVersion.v381)
 ], CCLabel.prototype, "_color", void 0);
 __decorate([
-    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342)
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342, EditorVersion_1.EditorVersion.v381)
 ], CCLabel.prototype, "_overflow", void 0);
 __decorate([
-    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342)
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342, EditorVersion_1.EditorVersion.v381)
 ], CCLabel.prototype, "_cacheMode", void 0);
 __decorate([
-    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342)
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342, EditorVersion_1.EditorVersion.v381)
 ], CCLabel.prototype, "_horizontalAlign", void 0);
 __decorate([
-    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342)
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342, EditorVersion_1.EditorVersion.v381)
 ], CCLabel.prototype, "_verticalAlign", void 0);
 __decorate([
-    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342)
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342, EditorVersion_1.EditorVersion.v381)
 ], CCLabel.prototype, "_actualFontSize", void 0);
 __decorate([
-    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342)
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342, EditorVersion_1.EditorVersion.v381)
 ], CCLabel.prototype, "_isItalic", void 0);
 __decorate([
-    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342)
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342, EditorVersion_1.EditorVersion.v381)
 ], CCLabel.prototype, "_isBold", void 0);
 __decorate([
-    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342)
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342, EditorVersion_1.EditorVersion.v381)
 ], CCLabel.prototype, "_isUnderline", void 0);
-exports.CCLabel = CCLabel = __decorate([
+__decorate([
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v381)
+], CCLabel.prototype, "_fontFamily", void 0);
+__decorate([
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v381)
+], CCLabel.prototype, "_font", void 0);
+CCLabel = __decorate([
     (0, _decorator_1.cctype)("cc.Label")
 ], CCLabel);
+exports.CCLabel = CCLabel;

@@ -6,4 +6,5 @@ var EditorVersion;
     EditorVersion[EditorVersion["all"] = 0] = "all";
     EditorVersion[EditorVersion["v249"] = 1] = "v249";
     EditorVersion[EditorVersion["v342"] = 2] = "v342";
-})(EditorVersion || (exports.EditorVersion = EditorVersion = {}));
+    EditorVersion[EditorVersion["v381"] = 3] = "v381";
+})(EditorVersion = exports.EditorVersion || (exports.EditorVersion = {}));

@@ -103,6 +103,7 @@ export class ImageCacheMgr {
                 imageWarp = this._loadImageMeta249(content, _path);
                 break;
             case EditorVersion.v342:
+            case EditorVersion.v381:
                 imageWarp = this._loadImageMeta34x(content, _path);
                 break;
 

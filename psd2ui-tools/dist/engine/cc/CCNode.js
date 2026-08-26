@@ -54,7 +54,7 @@ let CCNode = class CCNode extends CCObject_1.CCObject {
         this._bfsRenderFlag = false;
         // 3.4.x
         this._lpos = new CCVec3_1.CCVec3();
-        // 3.4.x
+        // Creator 3.x. 3.8 serializes this as cc.Quat; Main assigns the profile-specific value.
         this._lrot = new CCVec3_1.CCVec3();
         // 3.4.x
         this._lscale = new CCVec3_1.CCVec3();
@@ -90,7 +90,6 @@ let CCNode = class CCNode extends CCObject_1.CCObject {
         this.children.push(child);
     }
 };
-exports.CCNode = CCNode;
 __decorate([
     (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.all)
 ], CCNode.prototype, "_parent", void 0);
@@ -149,19 +148,19 @@ __decorate([
     (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v249)
 ], CCNode.prototype, "_bfsRenderFlag", void 0);
 __decorate([
-    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342)
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342, EditorVersion_1.EditorVersion.v381)
 ], CCNode.prototype, "_lpos", void 0);
 __decorate([
-    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342)
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342, EditorVersion_1.EditorVersion.v381)
 ], CCNode.prototype, "_lrot", void 0);
 __decorate([
-    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342)
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342, EditorVersion_1.EditorVersion.v381)
 ], CCNode.prototype, "_lscale", void 0);
 __decorate([
-    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342)
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342, EditorVersion_1.EditorVersion.v381)
 ], CCNode.prototype, "_euler", void 0);
 __decorate([
-    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342)
+    (0, _decorator_1.ccversion)(EditorVersion_1.EditorVersion.v342, EditorVersion_1.EditorVersion.v381)
 ], CCNode.prototype, "_layer", void 0);
 __decorate([
     _decorator_1.nonserialization
@@ -172,6 +171,7 @@ __decorate([
 __decorate([
     _decorator_1.nonserialization
 ], CCNode.prototype, "children", void 0);
-exports.CCNode = CCNode = __decorate([
+CCNode = __decorate([
     (0, _decorator_1.cctype)("cc.Node")
 ], CCNode);
+exports.CCNode = CCNode;

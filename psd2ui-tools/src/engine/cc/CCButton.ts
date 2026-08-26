@@ -2,7 +2,8 @@ import { EditorVersion } from "../../EditorVersion";
 import { PsdLayer } from "../../psd/PsdLayer";
 import { cctype, ccversion } from "../../_decorator";
 import { CCComponent } from "./CCComponent";
-import { CCIDObject } from "./CCObject";
+import { CCIDObject, CCUUIDObject } from "./CCObject";
+import { CCColor } from "./values/CCColor";
 
 @cctype("cc.Button")
 export class CCButton extends CCComponent{
@@ -33,22 +34,39 @@ export class CCButton extends CCComponent{
     _N$target: CCIDObject = null;
 
     // 3.4.x
-    @ccversion(EditorVersion.v342)
+    @ccversion(EditorVersion.v342, EditorVersion.v381)
     _interactable = true;
     // 3.4.x
-    @ccversion(EditorVersion.v342)
+    @ccversion(EditorVersion.v342, EditorVersion.v381)
     _transition = 3;
     // 3.4.x
-    @ccversion(EditorVersion.v342)
+    @ccversion(EditorVersion.v342, EditorVersion.v381)
     _duration = 0.1;
     // 3.4.x
-    @ccversion(EditorVersion.v342)
+    @ccversion(EditorVersion.v342, EditorVersion.v381)
     _zoomScale = 1.2;
     // 3.4.x
-    @ccversion(EditorVersion.v342)
+    @ccversion(EditorVersion.v342, EditorVersion.v381)
     _target: CCIDObject = null;
 
+    @ccversion(EditorVersion.v381)
+    _normalColor = new CCColor(214, 214, 214, 255);
+    @ccversion(EditorVersion.v381)
+    _hoverColor = new CCColor(211, 211, 211, 255);
+    @ccversion(EditorVersion.v381)
+    _pressedColor = new CCColor(255, 255, 255, 255);
+    @ccversion(EditorVersion.v381)
+    _disabledColor = new CCColor(124, 124, 124, 255);
+    @ccversion(EditorVersion.v381)
+    _normalSprite: CCUUIDObject = null;
+    @ccversion(EditorVersion.v381)
+    _hoverSprite: CCUUIDObject = null;
+    @ccversion(EditorVersion.v381)
+    _pressedSprite: CCUUIDObject = null;
+    @ccversion(EditorVersion.v381)
+    _disabledSprite: CCUUIDObject = null;
+
     updateWithLayer(psdLayer: PsdLayer) {
-        
+        this._target = this._N$target = this.node;
     }
 }
