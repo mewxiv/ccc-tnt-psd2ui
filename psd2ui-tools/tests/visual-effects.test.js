@@ -7,6 +7,7 @@ const { PsdImage } = require('../dist/psd/PsdImage');
 const { PsdText } = require('../dist/psd/PsdText');
 const { Parser } = require('../dist/Parser');
 const { CCLabel } = require('../dist/engine/cc/CCLabel');
+const { Color } = require('../dist/values/Color');
 
 function sourceWithEffects(effects, fillOpacity = 1) {
   const layerCanvas = canvas.createCanvas(4, 4);
@@ -48,11 +49,83 @@ test('vector gradient overlay is baked when ag-psd exposes it as an array', () =
   assert.ok(pixel[2] < 50, `expected red gradient start, got ${[...pixel]}`);
 });
 
+test('smart object color overlay is baked with its Photoshop blend mode', () => {
+  const layerCanvas = canvas.createCanvas(2, 1);
+  const context = layerCanvas.getContext('2d');
+  context.fillStyle = '#f55933';
+  context.fillRect(0, 0, 2, 1);
+  const image = new PsdImage({
+    name: 'smart-object-color-overlay',
+    left: 0,
+    top: 0,
+    right: 2,
+    bottom: 1,
+    hidden: false,
+    opacity: 1,
+    canvas: layerCanvas,
+    placedLayer: { transform: [0, 0, 2, 0, 2, 1, 0, 1] },
+    effects: {
+      solidFill: [{
+        enabled: true,
+        blendMode: 'color',
+        opacity: 1,
+        color: { r: 253, g: 122, b: 255 },
+      }],
+    },
+  }, null, null);
+
+  const pixel = image.source.canvas.getContext('2d').getImageData(0, 0, 1, 1).data;
+  assert.ok(pixel[2] > pixel[0], `expected purple color overlay, got ${[...pixel]}`);
+  assert.ok(pixel[0] > pixel[1], `expected purple color overlay, got ${[...pixel]}`);
+});
+
+test('bitmap layer mask is baked in document coordinates and trims transparent pixels', () => {
+  const layerCanvas = canvas.createCanvas(6, 4);
+  layerCanvas.getContext('2d').fillRect(0, 0, 6, 4);
+  const maskCanvas = canvas.createCanvas(4, 4);
+  const maskContext = maskCanvas.getContext('2d');
+  maskContext.fillStyle = '#ffffff';
+  maskContext.fillRect(0, 0, 4, 4);
+
+  const image = new PsdImage({
+    name: 'masked-image',
+    left: 10,
+    top: 20,
+    right: 16,
+    bottom: 24,
+    hidden: false,
+    opacity: 1,
+    canvas: layerCanvas,
+    mask: {
+      left: 12,
+      top: 20,
+      right: 16,
+      bottom: 24,
+      defaultColor: 0,
+      disabled: false,
+      positionRelativeToLayer: false,
+      canvas: maskCanvas,
+    },
+  }, null, null);
+
+  assert.deepEqual([image.source.canvas.width, image.source.canvas.height], [4, 4]);
+  assert.deepEqual(
+    [image.rect.left, image.rect.top, image.rect.right, image.rect.bottom],
+    [12, 20, 16, 24]
+  );
+});
+
 test('Photoshop fill opacity becomes the exported node opacity', () => {
   const image = new PsdImage(sourceWithEffects({}, 0.30196078431372547), null, null);
   image.parent = {};
   image.parseSource();
   assert.equal(image.opacity, 77);
+});
+
+test('Photoshop floating point color channels use nearest-byte quantization', () => {
+  const color = new Color(105.00135, 93.9981, 77.00235, 255);
+  assert.deepEqual([color.r, color.g, color.b, color.a], [105, 94, 77, 255]);
+  assert.equal(color.toHEX(), '695e4d');
 });
 
 test('only gradient text effects require rasterized text output', () => {
@@ -63,6 +136,72 @@ test('only gradient text effects require rasterized text output', () => {
   assert.equal(parser.shouldRasterizeText({
     effects: { dropShadow: [{ enabled: true }] },
   }), false);
+  assert.equal(parser.shouldRasterizeText({
+    effects: { disabled: true, gradientOverlay: [{ enabled: true }] },
+  }), false);
+});
+
+test('disabled Photoshop effects do not create a text outline', () => {
+  const text = new PsdText({
+    name: 'disabled-outline',
+    left: 0, top: 0, right: 100, bottom: 20,
+    hidden: false,
+    opacity: 1,
+    text: {
+      text: 'no outline',
+      style: { fontSize: 20, fillColor: { r: 255, g: 255, b: 255, a: 1 } },
+    },
+    effects: {
+      disabled: true,
+      stroke: [{
+        enabled: true,
+        position: 'outside',
+        fillType: 'color',
+        size: { value: 3 },
+        opacity: 1,
+        color: { r: 0, g: 0, b: 0 },
+      }],
+    },
+  }, null, { size: { height: 100 } });
+
+  text.parseSource();
+  assert.equal(text.outline, undefined);
+});
+
+test('text inherits an active outside color stroke from its Photoshop group', () => {
+  const root = { size: { height: 100 } };
+  const group = {
+    parent: null,
+    source: {
+      effects: {
+        stroke: [{
+          enabled: true,
+          position: 'outside',
+          fillType: 'color',
+          size: { value: 2 },
+          opacity: 1,
+          color: { r: 255, g: 0, b: 0.02 },
+        }],
+      },
+    },
+  };
+  const text = new PsdText({
+    name: 'group-outline',
+    left: 0, top: 0, right: 100, bottom: 20,
+    hidden: false,
+    opacity: 1,
+    text: {
+      text: 'red outline',
+      style: { fontSize: 20, fillColor: { r: 255, g: 255, b: 255, a: 1 } },
+    },
+  }, group, root);
+
+  text.parseSource();
+  assert.equal(text.outline.width, 2);
+  assert.deepEqual(
+    [text.outline.color.r, text.outline.color.g, text.outline.color.b, text.outline.color.a],
+    [255, 0, 0, 255]
+  );
 });
 
 test('large inner glow fades toward the center instead of flattening a short button', () => {

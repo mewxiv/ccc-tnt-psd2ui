@@ -137,7 +137,7 @@ class Parser {
     }
     shouldRasterizeText(source) {
         const effects = source === null || source === void 0 ? void 0 : source.effects;
-        if (!effects)
+        if (!effects || effects.disabled === true)
             return false;
         const gradientOverlay = this.enabledEffect(effects.gradientOverlay);
         const stroke = this.enabledEffect(effects.stroke);

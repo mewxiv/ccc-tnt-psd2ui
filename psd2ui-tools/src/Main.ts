@@ -3,6 +3,7 @@
 //ag-psd 使用 参考 https://github.com/Agamnentzar/ag-psd/blob/HEAD/README_PSD.md
 
 import 'ag-psd/initialize-canvas'; // only needed for reading image data and thumbnails
+import './psd/PsdCompatibility';
 import * as psd from 'ag-psd';
 import fs from 'fs-extra';
 import path from 'path';

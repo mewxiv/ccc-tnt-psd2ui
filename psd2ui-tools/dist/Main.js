@@ -38,6 +38,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Main = void 0;
 require("ag-psd/initialize-canvas"); // only needed for reading image data and thumbnails
+require("./psd/PsdCompatibility");
 const psd = __importStar(require("ag-psd"));
 const fs_extra_1 = __importDefault(require("fs-extra"));
 const path_1 = __importDefault(require("path"));

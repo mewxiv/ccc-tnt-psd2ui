@@ -140,7 +140,7 @@ export class Parser {
 
     private shouldRasterizeText(source: any) {
         const effects = source?.effects;
-        if (!effects) return false;
+        if (!effects || effects.disabled === true) return false;
         const gradientOverlay = this.enabledEffect(effects.gradientOverlay);
         const stroke = this.enabledEffect(effects.stroke);
         return !!(gradientOverlay || (stroke && stroke.fillType === 'gradient'));

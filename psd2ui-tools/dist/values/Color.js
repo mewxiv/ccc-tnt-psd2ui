@@ -3,16 +3,20 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Color = void 0;
 class Color {
     constructor(r, g, b, a) {
-        this.r = Math.ceil(r || 0);
-        this.g = Math.ceil(g || 0);
-        this.b = Math.ceil(b || 0);
-        this.a = Math.ceil(a || 0);
+        this.r = this.toByte(r);
+        this.g = this.toByte(g);
+        this.b = this.toByte(b);
+        this.a = this.toByte(a);
     }
     set(color) {
-        this.r = Math.ceil(color.r || 0);
-        this.g = Math.ceil(color.g || 0);
-        this.b = Math.ceil(color.b || 0);
-        this.a = Math.ceil(color.a || 0);
+        this.r = this.toByte(color.r);
+        this.g = this.toByte(color.g);
+        this.b = this.toByte(color.b);
+        this.a = this.toByte(color.a);
+    }
+    toByte(value) {
+        const numeric = Number(value);
+        return Math.max(0, Math.min(255, Math.round(Number.isFinite(numeric) ? numeric : 0)));
     }
     toHEX(fmt = '#rrggbb') {
         const prefix = '0';

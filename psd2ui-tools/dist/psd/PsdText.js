@@ -52,24 +52,31 @@ class PsdText extends PsdLayer_1.PsdLayer {
     }
     /** 描边 */
     parseStroke() {
-        var _a, _b;
-        if ((_a = this.source.effects) === null || _a === void 0 ? void 0 : _a.stroke) {
-            let stroke = (_b = this.source.effects) === null || _b === void 0 ? void 0 : _b.stroke[0];
-            // 外描边
-            if ((stroke === null || stroke === void 0 ? void 0 : stroke.enabled) && (stroke === null || stroke === void 0 ? void 0 : stroke.position) === "outside") {
-                let color = stroke.color;
+        var _a, _b, _c;
+        let layer = this;
+        while (layer) {
+            const effects = (_a = layer.source) === null || _a === void 0 ? void 0 : _a.effects;
+            const stroke = (effects === null || effects === void 0 ? void 0 : effects.disabled) === true
+                ? null
+                : (_b = effects === null || effects === void 0 ? void 0 : effects.stroke) === null || _b === void 0 ? void 0 : _b.find((entry) => entry === null || entry === void 0 ? void 0 : entry.enabled);
+            // Cocos LabelOutline is the closest equivalent to a Photoshop
+            // outside color stroke, including one applied to a containing group.
+            if ((stroke === null || stroke === void 0 ? void 0 : stroke.position) === "outside" && (stroke === null || stroke === void 0 ? void 0 : stroke.fillType) !== "gradient" && (stroke === null || stroke === void 0 ? void 0 : stroke.color)) {
+                const opacity = Number.isFinite(stroke.opacity) ? stroke.opacity : 1;
                 this.outline = {
-                    width: stroke.size.value,
-                    color: new Color_1.Color(color.r, color.g, color.b, stroke.opacity * 255)
+                    width: ((_c = stroke.size) === null || _c === void 0 ? void 0 : _c.value) || 0,
+                    color: new Color_1.Color(stroke.color.r, stroke.color.g, stroke.color.b, opacity * 255)
                 };
+                return;
             }
+            layer = layer.parent;
         }
     }
     /** 解析 颜色叠加 */
     parseSolidFill() {
-        var _a, _b;
-        if ((_a = this.source.effects) === null || _a === void 0 ? void 0 : _a.solidFill) {
-            let solidFills = (_b = this.source.effects) === null || _b === void 0 ? void 0 : _b.solidFill;
+        var _a, _b, _c;
+        if (((_a = this.source.effects) === null || _a === void 0 ? void 0 : _a.disabled) !== true && ((_b = this.source.effects) === null || _b === void 0 ? void 0 : _b.solidFill)) {
+            let solidFills = (_c = this.source.effects) === null || _c === void 0 ? void 0 : _c.solidFill;
             for (let i = 0; i < solidFills.length; i++) {
                 const solidFill = solidFills[i];
                 if (solidFill.enabled) {

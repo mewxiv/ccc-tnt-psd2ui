@@ -37,6 +37,7 @@ export class PsdImage extends PsdLayer {
         // img name
         this.imgName = this.attr.comps.img?.name || this.name
 
+        this.applyLayerMask();
         this.trimPlacedLayerTransparentPadding();
         this.applyLayerStyle();
 
@@ -59,8 +60,8 @@ export class PsdImage extends PsdLayer {
     /** Bake Photoshop effects which Cocos 2.4 sprites and labels cannot represent. */
     private applyLayerStyle() {
         const sourceCanvas: canvas.Canvas = this.source.canvas;
-        const effects = (this.source.vectorMask || this.source.text) && this.source.effects;
-        if (!sourceCanvas || !effects) return;
+        const effects = (this.source.vectorMask || this.source.text || this.source.placedLayer) && this.source.effects;
+        if (!sourceCanvas || !effects || effects.disabled === true) return;
 
         const solidFill = this.enabledEffect(effects.solidFill);
         const gradientOverlay = this.enabledEffect(effects.gradientOverlay);
@@ -101,14 +102,12 @@ export class PsdImage extends PsdLayer {
             this.paintMask(styledContext, strokeMask, stroke.gradient || null, stroke.color, stroke.opacity, stroke.gradient?.angle);
         }
 
-        if (!gradientOverlay?.gradient && !solidFill?.color) {
-            styledContext.drawImage(sourceCanvas, 0, 0);
-        }
+        styledContext.drawImage(sourceCanvas, 0, 0);
 
         if (gradientOverlay?.gradient) {
-            this.paintMask(styledContext, sourceCanvas, gradientOverlay.gradient, null, gradientOverlay.opacity, gradientOverlay.angle);
+            this.paintMask(styledContext, sourceCanvas, gradientOverlay.gradient, null, gradientOverlay.opacity, gradientOverlay.angle, gradientOverlay.blendMode);
         } else if (solidFill?.color) {
-            this.paintMask(styledContext, sourceCanvas, null, solidFill.color, solidFill.opacity);
+            this.paintMask(styledContext, sourceCanvas, null, solidFill.color, solidFill.opacity, 90, solidFill.blendMode);
         }
 
         if (innerGlow) {
@@ -241,6 +240,8 @@ export class PsdImage extends PsdLayer {
                 return 'color-dodge';
             case 'multiply':
                 return 'multiply';
+            case 'color':
+                return 'color';
             case 'linear dodge':
                 return 'lighter';
             default:
@@ -493,5 +494,76 @@ export class PsdImage extends PsdLayer {
             right: right + 1,
             bottom: bottom + 1,
         };
+    }
+
+    private applyLayerMask() {
+        const sourceCanvas: canvas.Canvas = this.source.canvas;
+        const mask = this.source.mask;
+        if (!sourceCanvas || !mask?.canvas || mask.disabled || mask.fromVectorData) {
+            return;
+        }
+
+        const maskValues = [mask.left, mask.top, mask.right, mask.bottom];
+        if (maskValues.some((value) => !Number.isFinite(value))) {
+            console.warn(`PsdImage-> layer mask ${this.name} has invalid bounds, keep original canvas`);
+            return;
+        }
+
+        const maskCanvas: canvas.Canvas = mask.canvas;
+        if (maskCanvas.width !== mask.right - mask.left || maskCanvas.height !== mask.bottom - mask.top) {
+            console.warn(`PsdImage-> layer mask ${this.name} bounds do not match its canvas, keep original canvas`);
+            return;
+        }
+
+        const sourceContext = sourceCanvas.getContext('2d');
+        const sourcePixels = sourceContext.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height);
+        const maskPixels = maskCanvas.getContext('2d').getImageData(0, 0, maskCanvas.width, maskCanvas.height).data;
+        const defaultColor = Math.max(0, Math.min(255, Math.round(Number(mask.defaultColor) || 0)));
+        const maskLeft = mask.left + (mask.positionRelativeToLayer ? this.rect.left : 0);
+        const maskTop = mask.top + (mask.positionRelativeToLayer ? this.rect.top : 0);
+
+        for (let y = 0; y < sourceCanvas.height; y++) {
+            for (let x = 0; x < sourceCanvas.width; x++) {
+                const documentX = this.rect.left + x;
+                const documentY = this.rect.top + y;
+                const maskX = documentX - maskLeft;
+                const maskY = documentY - maskTop;
+                const maskValue = maskX >= 0 && maskY >= 0 && maskX < maskCanvas.width && maskY < maskCanvas.height
+                    ? maskPixels[(maskY * maskCanvas.width + maskX) * 4]
+                    : defaultColor;
+                const alphaIndex = (y * sourceCanvas.width + x) * 4 + 3;
+                sourcePixels.data[alphaIndex] = Math.round(sourcePixels.data[alphaIndex] * maskValue / 255);
+            }
+        }
+        sourceContext.putImageData(sourcePixels, 0, 0);
+
+        const bounds = this.computeVisibleAlphaBounds(sourceCanvas);
+        if (!bounds) {
+            this.source.canvas = canvas.createCanvas(1, 1);
+            this.setImageBounds(this.rect.left, this.rect.top, 1, 1);
+            return;
+        }
+        if (bounds.left === 0 && bounds.top === 0
+            && bounds.right === sourceCanvas.width && bounds.bottom === sourceCanvas.height) {
+            return;
+        }
+
+        const width = bounds.right - bounds.left;
+        const height = bounds.bottom - bounds.top;
+        const croppedCanvas = canvas.createCanvas(width, height);
+        croppedCanvas.getContext('2d').drawImage(
+            sourceCanvas,
+            bounds.left, bounds.top, width, height,
+            0, 0, width, height
+        );
+        this.source.canvas = croppedCanvas;
+        this.setImageBounds(this.rect.left + bounds.left, this.rect.top + bounds.top, width, height);
+    }
+
+    private setImageBounds(left: number, top: number, width: number, height: number) {
+        this.rect.left = this.source.left = left;
+        this.rect.top = this.source.top = top;
+        this.rect.right = this.source.right = left + width;
+        this.rect.bottom = this.source.bottom = top + height;
     }
 }

@@ -1,23 +1,28 @@
 export class Color{
-    declare r: number; 
-    declare g: number; 
-    declare b: number; 
-    declare a: number; 
+    declare r: number;
+    declare g: number;
+    declare b: number;
+    declare a: number;
     constructor(r: number,g: number,b: number,a: number){
-        this.r = Math.ceil(r || 0);
-        this.g = Math.ceil(g || 0);
-        this.b = Math.ceil(b || 0);
-        this.a = Math.ceil(a || 0);
+        this.r = this.toByte(r);
+        this.g = this.toByte(g);
+        this.b = this.toByte(b);
+        this.a = this.toByte(a);
     }
 
     set(color: Color){
-        this.r = Math.ceil(color.r || 0);
-        this.g = Math.ceil(color.g || 0);
-        this.b = Math.ceil(color.b || 0);
-        this.a = Math.ceil(color.a || 0);
+        this.r = this.toByte(color.r);
+        this.g = this.toByte(color.g);
+        this.b = this.toByte(color.b);
+        this.a = this.toByte(color.a);
     }
 
-    
+    private toByte(value: number) {
+        const numeric = Number(value);
+        return Math.max(0, Math.min(255, Math.round(Number.isFinite(numeric) ? numeric : 0)));
+    }
+
+
     public toHEX (fmt: '#rgb' | '#rrggbb' | '#rrggbbaa' = '#rrggbb') {
         const prefix = '0';
         // #rrggbb

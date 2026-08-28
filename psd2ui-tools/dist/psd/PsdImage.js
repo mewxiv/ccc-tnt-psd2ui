@@ -22,6 +22,7 @@ class PsdImage extends PsdLayer_1.PsdLayer {
         this.textureUuid = Utils_1.utils.uuid();
         // img name
         this.imgName = ((_a = this.attr.comps.img) === null || _a === void 0 ? void 0 : _a.name) || this.name;
+        this.applyLayerMask();
         this.trimPlacedLayerTransparentPadding();
         this.applyLayerStyle();
         // .9
@@ -41,8 +42,8 @@ class PsdImage extends PsdLayer_1.PsdLayer {
     applyLayerStyle() {
         var _a, _b, _c, _d, _e, _f;
         const sourceCanvas = this.source.canvas;
-        const effects = (this.source.vectorMask || this.source.text) && this.source.effects;
-        if (!sourceCanvas || !effects)
+        const effects = (this.source.vectorMask || this.source.text || this.source.placedLayer) && this.source.effects;
+        if (!sourceCanvas || !effects || effects.disabled === true)
             return;
         const solidFill = this.enabledEffect(effects.solidFill);
         const gradientOverlay = this.enabledEffect(effects.gradientOverlay);
@@ -81,14 +82,12 @@ class PsdImage extends PsdLayer_1.PsdLayer {
             maskContext.drawImage(sourceCanvas, 0, 0);
             this.paintMask(styledContext, strokeMask, stroke.gradient || null, stroke.color, stroke.opacity, (_d = stroke.gradient) === null || _d === void 0 ? void 0 : _d.angle);
         }
-        if (!(gradientOverlay === null || gradientOverlay === void 0 ? void 0 : gradientOverlay.gradient) && !(solidFill === null || solidFill === void 0 ? void 0 : solidFill.color)) {
-            styledContext.drawImage(sourceCanvas, 0, 0);
-        }
+        styledContext.drawImage(sourceCanvas, 0, 0);
         if (gradientOverlay === null || gradientOverlay === void 0 ? void 0 : gradientOverlay.gradient) {
-            this.paintMask(styledContext, sourceCanvas, gradientOverlay.gradient, null, gradientOverlay.opacity, gradientOverlay.angle);
+            this.paintMask(styledContext, sourceCanvas, gradientOverlay.gradient, null, gradientOverlay.opacity, gradientOverlay.angle, gradientOverlay.blendMode);
         }
         else if (solidFill === null || solidFill === void 0 ? void 0 : solidFill.color) {
-            this.paintMask(styledContext, sourceCanvas, null, solidFill.color, solidFill.opacity);
+            this.paintMask(styledContext, sourceCanvas, null, solidFill.color, solidFill.opacity, 90, solidFill.blendMode);
         }
         if (innerGlow) {
             const radius = Math.max(1, Math.round(Number((_e = innerGlow.size) === null || _e === void 0 ? void 0 : _e.value) || 1));
@@ -206,6 +205,8 @@ class PsdImage extends PsdLayer_1.PsdLayer {
                 return 'color-dodge';
             case 'multiply':
                 return 'multiply';
+            case 'color':
+                return 'color';
             case 'linear dodge':
                 return 'lighter';
             default:
@@ -415,6 +416,65 @@ class PsdImage extends PsdLayer_1.PsdLayer {
             right: right + 1,
             bottom: bottom + 1,
         };
+    }
+    applyLayerMask() {
+        const sourceCanvas = this.source.canvas;
+        const mask = this.source.mask;
+        if (!sourceCanvas || !(mask === null || mask === void 0 ? void 0 : mask.canvas) || mask.disabled || mask.fromVectorData) {
+            return;
+        }
+        const maskValues = [mask.left, mask.top, mask.right, mask.bottom];
+        if (maskValues.some((value) => !Number.isFinite(value))) {
+            console.warn(`PsdImage-> layer mask ${this.name} has invalid bounds, keep original canvas`);
+            return;
+        }
+        const maskCanvas = mask.canvas;
+        if (maskCanvas.width !== mask.right - mask.left || maskCanvas.height !== mask.bottom - mask.top) {
+            console.warn(`PsdImage-> layer mask ${this.name} bounds do not match its canvas, keep original canvas`);
+            return;
+        }
+        const sourceContext = sourceCanvas.getContext('2d');
+        const sourcePixels = sourceContext.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height);
+        const maskPixels = maskCanvas.getContext('2d').getImageData(0, 0, maskCanvas.width, maskCanvas.height).data;
+        const defaultColor = Math.max(0, Math.min(255, Math.round(Number(mask.defaultColor) || 0)));
+        const maskLeft = mask.left + (mask.positionRelativeToLayer ? this.rect.left : 0);
+        const maskTop = mask.top + (mask.positionRelativeToLayer ? this.rect.top : 0);
+        for (let y = 0; y < sourceCanvas.height; y++) {
+            for (let x = 0; x < sourceCanvas.width; x++) {
+                const documentX = this.rect.left + x;
+                const documentY = this.rect.top + y;
+                const maskX = documentX - maskLeft;
+                const maskY = documentY - maskTop;
+                const maskValue = maskX >= 0 && maskY >= 0 && maskX < maskCanvas.width && maskY < maskCanvas.height
+                    ? maskPixels[(maskY * maskCanvas.width + maskX) * 4]
+                    : defaultColor;
+                const alphaIndex = (y * sourceCanvas.width + x) * 4 + 3;
+                sourcePixels.data[alphaIndex] = Math.round(sourcePixels.data[alphaIndex] * maskValue / 255);
+            }
+        }
+        sourceContext.putImageData(sourcePixels, 0, 0);
+        const bounds = this.computeVisibleAlphaBounds(sourceCanvas);
+        if (!bounds) {
+            this.source.canvas = canvas_1.default.createCanvas(1, 1);
+            this.setImageBounds(this.rect.left, this.rect.top, 1, 1);
+            return;
+        }
+        if (bounds.left === 0 && bounds.top === 0
+            && bounds.right === sourceCanvas.width && bounds.bottom === sourceCanvas.height) {
+            return;
+        }
+        const width = bounds.right - bounds.left;
+        const height = bounds.bottom - bounds.top;
+        const croppedCanvas = canvas_1.default.createCanvas(width, height);
+        croppedCanvas.getContext('2d').drawImage(sourceCanvas, bounds.left, bounds.top, width, height, 0, 0, width, height);
+        this.source.canvas = croppedCanvas;
+        this.setImageBounds(this.rect.left + bounds.left, this.rect.top + bounds.top, width, height);
+    }
+    setImageBounds(left, top, width, height) {
+        this.rect.left = this.source.left = left;
+        this.rect.top = this.source.top = top;
+        this.rect.right = this.source.right = left + width;
+        this.rect.bottom = this.source.bottom = top + height;
     }
 }
 exports.PsdImage = PsdImage;

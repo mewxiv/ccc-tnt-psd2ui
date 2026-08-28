@@ -70,21 +70,28 @@ export class PsdText extends PsdLayer {
 
     /** 描边 */
     parseStroke() {
-        if (this.source.effects?.stroke) {
-            let stroke = this.source.effects?.stroke[0];
-            // 外描边
-            if (stroke?.enabled && stroke?.position === "outside") {
-                let color = stroke.color;
+        let layer: PsdLayer = this;
+        while (layer) {
+            const effects = layer.source?.effects;
+            const stroke = effects?.disabled === true
+                ? null
+                : effects?.stroke?.find((entry: any) => entry?.enabled);
+            // Cocos LabelOutline is the closest equivalent to a Photoshop
+            // outside color stroke, including one applied to a containing group.
+            if (stroke?.position === "outside" && stroke?.fillType !== "gradient" && stroke?.color) {
+                const opacity = Number.isFinite(stroke.opacity) ? stroke.opacity : 1;
                 this.outline = {
-                    width: stroke.size.value,
-                    color: new Color(color.r, color.g, color.b, stroke.opacity * 255)
-                }
+                    width: stroke.size?.value || 0,
+                    color: new Color(stroke.color.r, stroke.color.g, stroke.color.b, opacity * 255)
+                };
+                return;
             }
+            layer = layer.parent;
         }
     }
     /** 解析 颜色叠加 */
     parseSolidFill() {
-        if (this.source.effects?.solidFill) {
+        if (this.source.effects?.disabled !== true && this.source.effects?.solidFill) {
             let solidFills = this.source.effects?.solidFill;
             for (let i = 0; i < solidFills.length; i++) {
                 const solidFill = solidFills[i];
